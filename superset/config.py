@@ -201,7 +201,7 @@ DRUID_ANALYSIS_TYPES = ["cardinality"]
 # Druid supports a SQL interface in its newer versions.
 # Setting this flag to True enables the deprecated, API-based Druid
 # connector. This feature may be removed at a future date.
-DRUID_IS_ACTIVE = False
+DRUID_IS_ACTIVE = True
 
 # If Druid is active whether to include the links to scan/refresh Druid datasources.
 # This should be disabled if you are trying to wean yourself off of the Druid NoSQL

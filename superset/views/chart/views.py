@@ -73,6 +73,50 @@ class SliceModelView(
         return super().render_app_template()
 
 
+class ReportSliceModelView(
+    SliceMixin, SupersetModelView, DeleteMixin
+):  # pylint: disable=too-many-ancestors
+    route_base = "/reportchart"
+    datamodel = SQLAInterface(Slice)
+    include_route_methods = RouteMethod.CRUD_SET | {
+        RouteMethod.DOWNLOAD,
+        RouteMethod.API_READ,
+        RouteMethod.API_DELETE,
+    }
+
+    def pre_add(self, item):
+        utils.validate_json(item.params)
+
+    def pre_update(self, item):
+        utils.validate_json(item.params)
+        check_ownership(item)
+
+    def pre_delete(self, item):
+        check_ownership(item)
+
+    @expose("/add", methods=["GET", "POST"])
+    @has_access
+    def add(self):
+        datasources = ConnectorRegistry.get_all_datasources(db.session)
+        datasources = [
+            {"value": str(d.id) + "__" + d.type, "label": repr(d)} for d in datasources
+        ]
+        return self.render_template(
+            "superset/add_slice.html",
+            bootstrap_data=json.dumps(
+                {"datasources": sorted(datasources, key=lambda d: d["label"])}
+            ),
+        )
+
+    @expose("/list/")
+    @has_access
+    def list(self):
+        # if not app.config["ENABLE_REACT_CRUD_VIEWS"]:
+        #     return super().list()
+
+        return super().render_app_template()
+
+
 class SliceAsync(SliceModelView):  # pylint: disable=too-many-ancestors
     route_base = "/sliceasync"
     include_route_methods = {RouteMethod.API_READ}

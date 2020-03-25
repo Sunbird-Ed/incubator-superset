@@ -920,6 +920,167 @@ class Superset(BaseSupersetView):
             standalone_mode=standalone,
         )
 
+
+    @event_logger.log_this
+    @has_access
+    @expose("/report_explore/<datasource_type>/<datasource_id>/", methods=["GET", "POST"])
+    @expose("/report_explore/", methods=["GET", "POST"])
+    def report_explore(self, datasource_type=None, datasource_id=None):
+        user_id = g.user.get_id() if g.user else None
+        form_data, slc = get_form_data(use_slice_data=True)
+
+        # Flash the SIP-15 message if the slice is owned by the current user and has not
+        # been updated, i.e., is not using the [start, end) interval.
+        if (
+            config["SIP_15_ENABLED"]
+            and slc
+            and g.user in slc.owners
+            and (
+                not form_data.get("time_range_endpoints")
+                or form_data["time_range_endpoints"]
+                != (
+                    utils.TimeRangeEndpoint.INCLUSIVE,
+                    utils.TimeRangeEndpoint.EXCLUSIVE,
+                )
+            )
+        ):
+            url = Href("/superset/explore/")(
+                {
+                    "form_data": json.dumps(
+                        {
+                            "slice_id": slc.id,
+                            "time_range_endpoints": (
+                                utils.TimeRangeEndpoint.INCLUSIVE.value,
+                                utils.TimeRangeEndpoint.EXCLUSIVE.value,
+                            ),
+                        }
+                    )
+                }
+            )
+
+            flash(Markup(config["SIP_15_TOAST_MESSAGE"].format(url=url)))
+
+        error_redirect = "/reportchart/list/"
+        try:
+            datasource_id, datasource_type = get_datasource_info(
+                datasource_id, datasource_type, form_data
+            )
+        except SupersetException:
+            return redirect(error_redirect)
+
+        datasource = ConnectorRegistry.get_datasource(
+            datasource_type, datasource_id, db.session
+        )
+        if not datasource:
+            flash(DATASOURCE_MISSING_ERR, "danger")
+            return redirect(error_redirect)
+
+        if config["ENABLE_ACCESS_REQUEST"] and (
+            not security_manager.datasource_access(datasource)
+        ):
+            flash(
+                __(security_manager.get_datasource_access_error_msg(datasource)),
+                "danger",
+            )
+            return redirect(
+                "superset/request_access/?"
+                f"datasource_type={datasource_type}&"
+                f"datasource_id={datasource_id}&"
+            )
+
+        viz_type = form_data.get("viz_type")
+        if not viz_type and datasource.default_endpoint:
+            return redirect(datasource.default_endpoint)
+
+        # slc perms
+        slice_add_perm = security_manager.can_access("can_add", "ReportSliceModelView")
+        slice_overwrite_perm = is_owner(slc, g.user)
+        slice_download_perm = security_manager.can_access(
+            "can_download", "ReportSliceModelView"
+        )
+
+        form_data["datasource"] = str(datasource_id) + "__" + datasource_type
+
+        # On explore, merge legacy and extra filters into the form data
+        utils.convert_legacy_filters_into_adhoc(form_data)
+        utils.merge_extra_filters(form_data)
+
+        # merge request url params
+        if request.method == "GET":
+            utils.merge_request_params(form_data, request.args)
+
+        # handle save or overwrite
+        action = request.args.get("action")
+
+        if action == "overwrite" and not slice_overwrite_perm:
+            return json_error_response(
+                _("You don't have the rights to ") + _("alter this ") + _("chart"),
+                status=400,
+            )
+
+        if action == "saveas" and not slice_add_perm:
+            return json_error_response(
+                _("You don't have the rights to ") + _("create a ") + _("chart"),
+                status=400,
+            )
+
+        if action in ("saveas", "overwrite"):
+            return self.save_or_overwrite_slice(
+                request.args,
+                slc,
+                slice_add_perm,
+                slice_overwrite_perm,
+                slice_download_perm,
+                datasource_id,
+                datasource_type,
+                datasource.name,
+            )
+
+        standalone = (
+            request.args.get(utils.ReservedUrlParameters.STANDALONE.value) == "true"
+        )
+        if security_manager.can_access("can_publish_chart", "Superset"):
+            role = "creator"
+        elif security_manager.can_access("can_review_chart", "Superset"):
+            role = "reviewer"
+        else:
+            role = "any"
+
+        bootstrap_data = {
+            "can_add": slice_add_perm,
+            "can_download": slice_download_perm,
+            "can_overwrite": slice_overwrite_perm,
+            "datasource": datasource.data,
+            "form_data": form_data,
+            "datasource_id": datasource_id,
+            "datasource_type": datasource_type,
+            "slice": slc.data if slc else None,
+            "standalone": standalone,
+            "user_id": user_id,
+            "forced_height": request.args.get("height"),
+            "common": common_bootstrap_payload(),
+            "role": role
+        }
+        table_name = (
+            datasource.table_name
+            if datasource_type == "table"
+            else datasource.datasource_name
+        )
+        if slc:
+            title = slc.slice_name
+        else:
+            title = _("Explore - %(table)s", table=table_name)
+        return self.render_template(
+            "superset/basic.html",
+            bootstrap_data=json.dumps(
+                bootstrap_data, default=utils.pessimistic_json_iso_dttm_ser
+            ),
+            entry="reportexplore",
+            title=title,
+            standalone_mode=standalone,
+        )
+
+
     @api
     @handle_api_exception
     @has_access_api

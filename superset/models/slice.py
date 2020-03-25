@@ -307,6 +307,10 @@ class Slice(
     def url(self) -> str:
         return f"/superset/explore/?form_data=%7B%22slice_id%22%3A%20{self.id}%7D"
 
+    @property
+    def report_url(self) -> str:
+        return f"/superset/report_explore/?form_data=%7B%22slice_id%22%3A%20{self.id}%7D"
+
 
 def set_related_perm(mapper, connection, target):
     # pylint: disable=unused-argument

@@ -151,7 +151,7 @@ class SupersetAppInitializer:
             CssTemplateAsyncModelView,
         )
         from superset.views.chart.api import ChartRestApi
-        from superset.views.chart.views import SliceModelView, SliceAsync
+        from superset.views.chart.views import SliceModelView, ReportSliceModelView, SliceAsync
         from superset.views.dashboard.api import DashboardRestApi
         from superset.views.dashboard.views import (
             DashboardModelView,
@@ -228,6 +228,14 @@ class SupersetAppInitializer:
             SliceModelView,
             "Charts",
             label=__("Charts"),
+            icon="fa-bar-chart",
+            category="",
+            category_icon="",
+        )
+        appbuilder.add_view(
+            ReportSliceModelView,
+            "ReportCharts",
+            label=__("Report Charts"),
             icon="fa-bar-chart",
             category="",
             category_icon="",

@@ -158,6 +158,7 @@ const config = {
     preamble: PREAMBLE,
     addSlice: addPreamble('/src/addSlice/index.jsx'),
     explore: addPreamble('/src/explore/index.jsx'),
+    reportexplore: addPreamble('/src/reportexplore/index.jsx'),
     dashboard: addPreamble('/src/dashboard/index.jsx'),
     sqllab: addPreamble('/src/SqlLab/index.jsx'),
     welcome: addPreamble('/src/welcome/index.jsx'),

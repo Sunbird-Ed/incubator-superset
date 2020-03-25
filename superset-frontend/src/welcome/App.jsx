@@ -26,6 +26,7 @@ import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import Menu from 'src/components/Menu/Menu';
 import DashboardList from 'src/views/dashboardList/DashboardList';
 import ChartList from 'src/views/chartList/ChartList';
+import ReportChartList from 'src/views/reportChartList/ReportChartList';
 import DatasetList from 'src/views/datasetList/DatasetList';
 
 import messageToastReducer from '../messageToasts/reducers';
@@ -62,6 +63,9 @@ const App = () => (
         </Route>
         <Route path="/chart/list/">
           <ChartList user={user} />
+        </Route>
+        <Route path="/reportchart/list/">
+          <ReportChartList user={user} />
         </Route>
         <Route path="/tablemodelview/list/">
           <DatasetList user={user} />
