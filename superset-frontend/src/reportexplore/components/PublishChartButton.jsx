@@ -35,8 +35,6 @@ import { SupersetClient } from '@superset-ui/connection';
 
 import CopyToClipboard from './../../components/CopyToClipboard';
 import ModalTrigger from './../../components/ModalTrigger';
-import { getExploreLongUrl } from '../exploreUtils';
-import * as saveModalActions from '../actions/saveModalActions';
 import { getExploreUrlAndPayload } from '../exploreUtils';
 
 const propTypes = {
@@ -53,7 +51,25 @@ export default class PublishChartButton extends React.Component {
       description: !!props.slice ? props.slice.form_data.report_name: '',
       x_axis_label: !!props.slice ? props.slice.form_data.report_x_axis_label: '',
       y_axis_label: !!props.slice ? props.slice.form_data.report_y_axis_label: '',
-      report_status: !!props.slice ? props.slice.form_data.report_status: ''
+      report_status: !!props.slice ? props.slice.form_data.report_status: '',
+      report_name: '',
+      report_description: '',
+      report_id: '',
+      report_summary: '',
+      chart_name: '',
+      chart_description: '',
+      chart_id: '',
+      chart_summary: '',
+      chart_type: '',
+      x_axis_label: '',
+      y_axis_label: '',
+      report_storage_account: '',
+      report_path: '',
+      report_format: '',
+      report_mode: '',
+      report_type: '',
+      report_granularity: '',
+      label_mapping: ''
     };
   }
 
@@ -128,9 +144,25 @@ export default class PublishChartButton extends React.Component {
     const { submitting,
             name,
             description,
+            report_status,
+            report_name,
+            report_description,
+            report_id,
+            report_summary,
+            chart_name,
+            chart_description,
+            chart_id,
+            chart_summary,
+            chart_type,
             x_axis_label,
             y_axis_label,
-            report_status
+            report_storage_account,
+            report_path,
+            report_format,
+            report_mode,
+            report_type,
+            report_granularity,
+            label_mapping
     } = this.state;
 
     const { role } = this.props
@@ -140,54 +172,182 @@ export default class PublishChartButton extends React.Component {
         <Row>
           <Col md={6}>
             <FormGroup>
-              <label className="control-label" htmlFor="name">
-                {t('Name')}
+              <label className="control-label" htmlFor="report_name">
+                {t('Report Name')}
               </label>
               <FormControl
-                name="name"
+                name="report_name"
                 type="text"
+                placeholder="Enter Report Name"
                 bsSize="sm"
-                value={name}
+                value={report_name}
                 onChange={event => this.handleInputChange(event)}
               />
             </FormGroup>
+          </Col>
+          <Col md={6}>
             <FormGroup>
-              <label className="control-label" htmlFor="description">
-                {t('Description')}
+              <label className="control-label" htmlFor="report_description">
+                {t('Report Description')}
               </label>
               <FormControl
-                name="description"
+                name="report_description"
+                placeholder="Enter Report Description"
                 type="text"
                 componentClass="textarea"
                 bsSize="sm"
-                value={description}
+                value={report_description}
                 onChange={event => this.handleInputChange(event)}
                 style={{ maxWidth: '100%' }}
               />
-              <p className="help-block">
-                {t(
-                  'The description will be displayed in the portal dashboard.',
-                )}
-              </p>
             </FormGroup>
+          </Col>
+        </Row>
+        <Row>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_id">
+                {t('Report ID')}
+              </label>
+              <FormControl
+                name="report_id"
+                placeholder="Enter Report ID"
+                type="text"
+                bsSize="sm"
+                value={report_id}
+                onChange={event => this.handleInputChange(event)}
+              />
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_summary">
+                {t('Report Summary')}
+              </label>
+              <FormControl
+                name="report_summary"
+                placeholder="Enter Report Summary"
+                type="text"
+                componentClass="textarea"
+                bsSize="sm"
+                value={report_summary}
+                onChange={event => this.handleInputChange(event)}
+                style={{ maxWidth: '100%' }}
+              />
+            </FormGroup>
+          </Col>
+        </Row>
+        <Row>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="chart_name">
+                {t('Chart Name')}
+              </label>
+              <FormControl
+                name="chart_name"
+                placeholder="Enter Chart Name"
+                type="text"
+                bsSize="sm"
+                value={chart_name}
+                onChange={event => this.handleInputChange(event)}
+              />
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="chart_description">
+                {t('Chart Description')}
+              </label>
+              <FormControl
+                name="chart_description"
+                placeholder="Enter Chart Description"
+                type="text"
+                componentClass="textarea"
+                bsSize="sm"
+                value={chart_description}
+                onChange={event => this.handleInputChange(event)}
+                style={{ maxWidth: '100%' }}
+              />
+            </FormGroup>
+          </Col>
+        </Row>
+        <Row>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="chart_id">
+                {t('Chart ID')}
+              </label>
+              <FormControl
+                name="chart_id"
+                placeholder="Enter Chart ID"
+                type="text"
+                bsSize="sm"
+                value={chart_id}
+                onChange={event => this.handleInputChange(event)}
+              />
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="chart_summary">
+                {t('Chart Summary')}
+              </label>
+              <FormControl
+                name="chart_summary"
+                placeholder="Enter Chart Summary"
+                type="text"
+                componentClass="textarea"
+                bsSize="sm"
+                value={chart_summary}
+                onChange={event => this.handleInputChange(event)}
+                style={{ maxWidth: '100%' }}
+              />
+            </FormGroup>
+          </Col>
+        </Row>
+        <Row>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="chart_type">
+                {t('Chart Type')}
+              </label>
+              <FormControl
+                name="chart_type"
+                componentClass="select"
+                bsSize="sm"
+                value={chart_type}
+                onChange={event => this.handleInputChange(event)}
+              >
+                <option value="line">line</option>
+                <option value="bar">bar</option>
+                <option value="stackedbar">Stacked bar</option>
+                <option value="barvertical">Bar-vertical</option>
+              </FormControl>
+            </FormGroup>
+          </Col>
+          <Col md={6}>
             <FormGroup>
               <label className="control-label" htmlFor="x_axis_label">
                 {t('X-Axis Label')}
               </label>
               <FormControl
                 name="x_axis_label"
+                placeholder="Enter X-Axis Label"
                 type="text"
                 bsSize="sm"
                 value={x_axis_label}
                 onChange={event => this.handleInputChange(event)}
               />
             </FormGroup>
+          </Col>
+          <Col md={6}>
             <FormGroup>
               <label className="control-label" htmlFor="y_axis_label">
                 {t('Y-Axis Label')}
               </label>
               <FormControl
                 name="y_axis_label"
+                placeholder="Enter Y-Axis Label"
                 type="text"
                 bsSize="sm"
                 value={y_axis_label}
@@ -196,6 +356,130 @@ export default class PublishChartButton extends React.Component {
             </FormGroup>
           </Col>
         </Row>
+        <Row>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_storage_account">
+                {t('Report Storage Account')}
+              </label>
+              <FormControl
+                name="report_storage_account"
+                placeholder="Enter Report Storage Account"
+                type="text"
+                bsSize="sm"
+                value={report_storage_account}
+                onChange={event => this.handleInputChange(event)}
+              />
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_path">
+                {t('Report Path')}
+              </label>
+              <FormControl
+                name="report_path"
+                placeholder="Enter Report Path"
+                type="text"
+                bsSize="sm"
+                value={report_path}
+                onChange={event => this.handleInputChange(event)}
+              />
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_format">
+                {t('Report Format')}
+              </label>
+              <FormControl
+                name="report_format"
+                placeholder="Enter Report Format"
+                componentClass="select"
+                bsSize="sm"
+                value={report_format}
+                onChange={event => this.handleInputChange(event)}
+              >
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </FormControl>
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_mode">
+                {t('Report Mode')}
+              </label>
+              <FormControl
+                name="report_mode"
+                placeholder="Enter Report Mode"
+                componentClass="select"
+                bsSize="sm"
+                value={report_mode}
+                onChange={event => this.handleInputChange(event)}
+              >
+                <option value="merge">Merge</option>
+                <option value="add">Add</option>
+              </FormControl>
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_type">
+                {t('Report Type')}
+              </label>
+              <FormControl
+                name="report_type"
+                placeholder="Enter Report Type"
+                componentClass="select"
+                bsSize="sm"
+                value={report_type}
+                onChange={event => this.handleInputChange(event)}
+              >
+                <option value="scheduled">Scheduled</option>
+                <option value="on-time">On-Time</option>
+              </FormControl>
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="report_granularity">
+                {t('Report Granularity')}
+              </label>
+              <FormControl
+                name="report_granularity"
+                placeholder="Enter Report Granularity"
+                componentClass="select"
+                bsSize="sm"
+                value={report_granularity}
+                onChange={event => this.handleInputChange(event)}
+              >
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+              </FormControl>
+            </FormGroup>
+          </Col>
+          <Col md={6}>
+            <FormGroup>
+              <label className="control-label" htmlFor="label_mapping">
+                {t('Label Mapping')}
+              </label>
+              <FormControl
+                name="label_mapping"
+                type="text"
+                componentClass="textarea"
+                placeholder="Enter JSON (For all fields)"
+                bsSize="sm"
+                value={label_mapping}
+                onChange={event => this.handleInputChange(event)}
+                style={{ maxWidth: '100%' }}
+              />
+            </FormGroup>
+          </Col>
+        </Row>
+
+
         {((role == 'creator' && !report_status) || (role=='reviewer' && report_status != 'published')) && (
           <Button
             onClick={this.publishChart}
@@ -221,7 +505,8 @@ export default class PublishChartButton extends React.Component {
   render() {
     const { report_status } = this.state
     const { role } = this.props
-    return role == 'creator' || !!report_status ? (
+    // return role == 'creator' || !!report_status ? (
+    return role == 'creator' || role == 'reviewer' ? (
       <ModalTrigger
         isButton
         animation={this.props.animation}

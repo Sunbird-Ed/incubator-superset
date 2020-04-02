@@ -18,20 +18,20 @@
  * under the License.
  */
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const webpack = require('webpack');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-  .BundleAnalyzerPlugin;
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const SpeedMeasurePlugin = require('speed-measure-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
-const WebpackAssetsManifest = require('webpack-assets-manifest');
+const ManifestPlugin = require('webpack-manifest-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const parsedArgs = require('yargs').argv;
+const getProxyConfig = require('./webpack.proxy-config');
+const packageConfig = require('./package.json');
 
 // input dir
 const APP_DIR = path.resolve(__dirname, './');
@@ -60,14 +60,38 @@ if (isDevMode) {
 
 const plugins = [
   // creates a manifest.json mapping of name to hashed output used in template files
-  new WebpackAssetsManifest({
-    publicPath: true,
+  new ManifestPlugin({
+    publicPath: output.publicPath,
+    seed: { app: 'superset' },
     // This enables us to include all relevant files for an entry
-    entrypoints: true,
+    generate: (seed, files, entrypoints) => {
+      // Each entrypoint's chunk files in the format of
+      // {
+      //   entry: {
+      //     css: [],
+      //     js: []
+      //   }
+      // }
+      const entryFiles = {};
+      for (const [entry, chunks] of Object.entries(entrypoints)) {
+        entryFiles[entry] = {
+          css: chunks
+            .filter(x => x.endsWith('.css'))
+            .map(x => path.join(output.publicPath, x)),
+          js: chunks
+            .filter(x => x.endsWith('.js'))
+            .map(x => path.join(output.publicPath, x)),
+        };
+      }
+      return {
+        ...seed,
+        entrypoints: entryFiles,
+      };
+    },
     // Also write to disk when using devServer
     // instead of only keeping manifest.json in memory
     // This is required to make devServer work with flask.
-    writeToDisk: isDevMode,
+    writeToFileEmit: isDevMode,
   }),
 
   // create fresh dist/ upon build
@@ -84,6 +108,7 @@ const plugins = [
 
   // runs type checking on a separate process to speed up the build
   new ForkTsCheckerWebpackPlugin({
+    eslint: true,
     checkSyntacticErrors: true,
   }),
 
@@ -96,10 +121,7 @@ const plugins = [
     { copyUnmodified: true },
   ),
 ];
-if (isDevMode) {
-  // Enable hot module replacement
-  plugins.push(new webpack.HotModuleReplacementPlugin());
-} else {
+if (!isDevMode) {
   // text loading (webpack 4+)
   plugins.push(
     new MiniCssExtractPlugin({
@@ -110,44 +132,30 @@ if (isDevMode) {
   plugins.push(new OptimizeCSSAssetsPlugin());
 }
 
-const BABEL_JAVASCRIPT_OPTIONS = {
-  presets: [
-    [
-      '@babel/preset-env',
-      {
-        useBuiltIns: 'usage',
-        corejs: 3,
-        loose: true,
-        shippedProposals: true,
-        modules: false,
-        targets: false,
-      },
-    ],
-    '@babel/preset-react',
-  ],
-  plugins: [
-    'lodash',
-    'react-hot-loader/babel',
-    '@babel/plugin-proposal-object-rest-spread',
-    '@babel/plugin-proposal-class-properties',
-    '@babel/plugin-syntax-dynamic-import',
-  ],
-};
-
-const BABEL_TYPESCRIPT_OPTIONS = {
-  presets: BABEL_JAVASCRIPT_OPTIONS.presets.concat([
-    '@babel/preset-typescript',
-  ]),
-  plugins: BABEL_JAVASCRIPT_OPTIONS.plugins.concat([
-    'babel-plugin-typescript-to-proptypes',
-  ]),
-};
-
-const PREAMBLE = ['babel-polyfill', path.join(APP_DIR, '/src/preamble.js')];
+const PREAMBLE = [path.join(APP_DIR, '/src/preamble.js')];
+if (isDevMode) {
+  // A Superset webpage normally includes two JS bundles in dev, `theme.js` and
+  // the main entrypoint. Only the main entry should have the dev server client,
+  // otherwise the websocket client will initialize twice, creating two sockets.
+  // Ref: https://github.com/gaearon/react-hot-loader/issues/141
+  PREAMBLE.unshift(
+    `webpack-dev-server/client?http://localhost:${devserverPort}`,
+  );
+}
 
 function addPreamble(entry) {
   return PREAMBLE.concat([path.join(APP_DIR, entry)]);
 }
+
+const babelLoader = {
+  loader: 'babel-loader',
+  options: {
+    cacheDirectory: true,
+    // disable gzip compression for cache files
+    // faster when there are millions of small files
+    cacheCompression: false,
+  },
+};
 
 const config = {
   node: {
@@ -166,6 +174,13 @@ const config = {
     showSavedQuery: [path.join(APP_DIR, '/src/showSavedQuery/index.jsx')],
   },
   output,
+  stats: 'minimal',
+  performance: {
+    assetFilter(assetFilename) {
+      // don't throw size limit warning on geojson and font files
+      return !/\.(map|geojson|woff2)$/.test(assetFilename);
+    },
+  },
   optimization: {
     splitChunks: {
       chunks: 'all',
@@ -175,7 +190,7 @@ const config = {
         default: false,
         major: {
           name: 'vendors-major',
-          test: /[\\/]node_modules\/(brace|react[-]dom|@superset[-]ui\/translation)[\\/]/,
+          test: /\/node_modules\/(brace|react|react-dom|@superset-ui\/translation|webpack.*|@babel.*)\//,
         },
       },
     },
@@ -183,6 +198,7 @@ const config = {
   resolve: {
     alias: {
       src: path.resolve(APP_DIR, './src'),
+      'react-dom': '@hot-loader/react-dom',
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     symlinks: false,
@@ -200,57 +216,29 @@ const config = {
       {
         test: /\.tsx?$/,
         use: [
-          { loader: 'cache-loader' },
-          {
-            loader: 'thread-loader',
-            options: {
-              // there should be 1 cpu for the fork-ts-checker-webpack-plugin
-              workers: os.cpus().length - 1,
-            },
-          },
+          'thread-loader',
+          babelLoader,
           {
             loader: 'ts-loader',
             options: {
               // transpile only in happyPack mode
               // type checking is done via fork-ts-checker-webpack-plugin
               happyPackMode: true,
+              transpileOnly: true,
             },
           },
         ],
       },
       {
         test: /\.jsx?$/,
-        exclude: /node_modules/,
-        include: APP_DIR,
-        loader: 'babel-loader',
-      },
-      {
-        // handle symlinked modules
-        // for debugging @superset-ui packages via npm link
-        test: /\.jsx?$/,
-        include: /node_modules\/[@]superset[-]ui.+\/src/,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: BABEL_JAVASCRIPT_OPTIONS,
-          },
-        ],
-      },
-      {
-        // handle symlinked modules
-        // for debugging @superset-ui packages via npm link
-        test: /\.tsx?$/,
-        include: /node_modules\/[@]superset[-]ui.+\/src/,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: BABEL_TYPESCRIPT_OPTIONS,
-          },
-        ],
+        // include source code for plugins, but exclude node_modules within them
+        exclude: [/superset-ui.*\/node_modules\//],
+        include: [new RegExp(`${APP_DIR}/src`), /superset-ui.*\/src/],
+        use: [babelLoader],
       },
       {
         test: /\.css$/,
-        include: [APP_DIR, /superset[-]ui.+\/src/],
+        include: [APP_DIR, /superset-ui.+\/src/],
         use: [
           isDevMode ? 'style-loader' : MiniCssExtractPlugin.loader,
           {
@@ -316,32 +304,22 @@ const config = {
   devtool: false,
 };
 
-let proxyConfig = {};
-const requireModule = module.require;
-
-function loadProxyConfig() {
-  try {
-    delete require.cache[require.resolve('./webpack.proxy-config')];
-    proxyConfig = requireModule('./webpack.proxy-config');
-  } catch (e) {
-    if (e.code !== 'ENOENT') {
-      console.error('\n>> Error loading proxy config:');
-      console.trace(e);
-    }
-  }
-}
+let proxyConfig = getProxyConfig();
 
 if (isDevMode) {
-  config.devtool = 'cheap-module-eval-source-map';
-
+  config.devtool = 'eval-cheap-module-source-map';
   config.devServer = {
-    before() {
-      loadProxyConfig();
-      // hot reloading proxy config
-      fs.watch('./webpack.proxy-config.js', loadProxyConfig);
+    before(app, server, compiler) {
+      // load proxy config when manifest updates
+      const hook = compiler.hooks.webpackManifestPluginAfterEmit;
+      hook.tap('ManifestPlugin', manifest => {
+        proxyConfig = getProxyConfig(manifest);
+      });
     },
     historyApiFallback: true,
     hot: true,
+    injectClient: false,
+    injectHot: true,
     inline: true,
     stats: 'minimal',
     overlay: true,
@@ -356,6 +334,24 @@ if (isDevMode) {
     ],
     contentBase: path.join(process.cwd(), '../static/assets'),
   };
+
+  // find all the symlinked plugins and use their source code for imports
+  let hasSymlink = false;
+  for (const [pkg, version] of Object.entries(packageConfig.dependencies)) {
+    const srcPath = `./node_modules/${pkg}/src`;
+    if (/superset-ui/.test(pkg) && fs.existsSync(srcPath)) {
+      console.log(
+        `[Superset Plugin] Use symlink source for ${pkg} @ ${version}`,
+      );
+      // only allow exact match so imports like `@superset-ui/plugin-name/lib`
+      // and `@superset-ui/plugin-name/esm` can still work.
+      config.resolve.alias[`${pkg}$`] = `${pkg}/src`;
+      hasSymlink = true;
+    }
+  }
+  if (hasSymlink) {
+    console.log(''); // pure cosmetic new line
+  }
 } else {
   config.optimization.minimizer = [
     new TerserPlugin({
