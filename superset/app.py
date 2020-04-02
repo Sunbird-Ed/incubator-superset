@@ -150,6 +150,7 @@ class SupersetAppInitializer:
             CssTemplateModelView,
             CssTemplateAsyncModelView,
         )
+        from superset.report_api import ReportAPI
         from superset.views.chart.api import ChartRestApi
         from superset.views.chart.views import SliceModelView, ReportSliceModelView, SliceAsync
         from superset.views.dashboard.api import DashboardRestApi
@@ -295,6 +296,7 @@ class SupersetAppInitializer:
         appbuilder.add_view_no_menu(SqlLab)
         appbuilder.add_view_no_menu(SqlMetricInlineView)
         appbuilder.add_view_no_menu(Superset)
+        appbuilder.add_view_no_menu(ReportAPI)
         appbuilder.add_view_no_menu(TableColumnInlineView)
         appbuilder.add_view_no_menu(TableModelView)
         appbuilder.add_view_no_menu(TableSchemaView)

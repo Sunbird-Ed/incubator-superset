@@ -17,6 +17,7 @@
 # pylint: disable=C,R,W
 import logging
 import re
+import pdb
 from collections import defaultdict
 from contextlib import closing
 from datetime import datetime, timedelta
@@ -1039,7 +1040,7 @@ class Superset(BaseSupersetView):
         standalone = (
             request.args.get(utils.ReservedUrlParameters.STANDALONE.value) == "true"
         )
-        if security_manager.can_access("can_publish_chart", "Superset"):
+        if security_manager.can_access("can_create_chart", "Superset"):
             role = "creator"
         elif security_manager.can_access("can_review_chart", "Superset"):
             role = "reviewer"
