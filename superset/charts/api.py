@@ -75,6 +75,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "id",
         "slice_name",
         "url",
+        "report_url",
         "description",
         "changed_by.username",
         "changed_by_name",

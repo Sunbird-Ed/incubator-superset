@@ -51,7 +51,7 @@ export default class PublishChartButton extends React.Component {
       description: !!props.slice ? props.slice.form_data.report_name: '',
       x_axis_label: !!props.slice ? props.slice.form_data.report_x_axis_label: '',
       y_axis_label: !!props.slice ? props.slice.form_data.report_y_axis_label: '',
-      report_status: !!props.slice ? props.slice.form_data.report_status: '',
+      report_status: '',
       report_name: '',
       report_description: '',
       report_id: '',
@@ -69,7 +69,7 @@ export default class PublishChartButton extends React.Component {
       report_mode: '',
       report_type: '',
       report_granularity: '',
-      label_mapping: ''
+      label_mapping: '{}'
     };
   }
 
@@ -81,59 +81,71 @@ export default class PublishChartButton extends React.Component {
     this.setState(data);
   }
 
-  // componentWillMount(){
-  //   SupersetClient.get({
-  //     url: "/superset/chart_config",
-  //   }).then(({ json }) => {
-  //     console.log(json)
-  //   }).catch(() =>
-  //     console.log("asdasd")
-  //   );
-  // }
+  componentWillMount(){
+    SupersetClient.get({
+      url: `/reportapi/report_config/${this.props.slice.slice_id}`,
+    }).then(({ json }) => {
+      this.setState({
+        ...this.state,
+        ...json.data
+      })
+      console.log(json)
+    }).catch(() =>
+      console.log("report config loaded")
+    );
+  }
 
   publishChart = () => {
     this.setState({ submitting: true });
     const { slice, role } = this.props
     const {
-      name,
-      description,
+      report_name,
+      report_description,
+      report_id,
+      report_summary,
+      chart_name,
+      chart_description,
+      chart_id,
+      chart_summary,
+      chart_type,
       x_axis_label,
-      y_axis_label
+      y_axis_label,
+      report_storage_account,
+      report_path,
+      report_format,
+      report_mode,
+      report_type,
+      report_granularity,
+      label_mapping
     } = this.state
-    let sliceParams = {};
-    sliceParams.slice_name = slice.slice_name;
-    sliceParams.action = 'overwrite';
-    sliceParams.slice_id = slice.slice_id;
-    slice.form_data.report_name = name
-    slice.form_data.report_description = description
-    slice.form_data.report_x_axis_label = x_axis_label
-    slice.form_data.report_y_axis_label = y_axis_label
+    let reportParams = {
+      report_name,
+      report_description,
+      report_id,
+      report_summary,
+      chart_name,
+      chart_description,
+      chart_id,
+      chart_summary,
+      chart_type,
+      x_axis_label,
+      y_axis_label,
+      report_storage_account,
+      report_path,
+      report_format,
+      report_mode,
+      report_type,
+      report_granularity,
+      label_mapping,
+      slice_id: slice.slice_id
+    };
     slice.form_data.report_status = role == 'reviewer' ? 'published' : 'review_submitted'
+    const url = role == 'reviewer' ? "/reportapi/publish_report" : "/reportapi/submit_report"
 
-    const { url, payload } = getExploreUrlAndPayload({
-      formData: slice.form_data,
-      endpointType: 'base',
-      force: false,
-      curUrl: null,
-      requestParams: sliceParams,
-    });
 
-    SupersetClient.post({ url, postPayload: { form_data: payload } }).then(({ json }) => {
-      if(role == 'reviewer') {
-        SupersetClient.post({
-          url: "/superset/publish_chart",
-          postPayload: { form_data: slice.form_data, chart_data: { name, description, x_axis_label, y_axis_label } },
-        }).then(({ json }) => {
-          console.log(json)
-          this.setState({ submitting: false, report_status: slice.form_data.report_status });
-        }).catch(() => {
-          this.setState({ submitting: false })
-          console.log("Submission Failed")
-        });
-      } else {
-        this.setState({ report_status: slice.form_data.report_status, submitting: false })
-        console.log("Successfully submitted for review")
-      }
+    SupersetClient.post({ url, postPayload: { form_data: reportParams } }).then(({ json }) => {
+      this.setState({ report_status: json.report_status, submitting: false })
+      console.log("Successfully submitted for review")
     })
     .catch(() => {
       console.log("Save failed::Submission")
@@ -141,28 +153,29 @@ export default class PublishChartButton extends React.Component {
   }
 
   renderQueryModalBody(){
-    const { submitting,
-            name,
-            description,
-            report_status,
-            report_name,
-            report_description,
-            report_id,
-            report_summary,
-            chart_name,
-            chart_description,
-            chart_id,
-            chart_summary,
-            chart_type,
-            x_axis_label,
-            y_axis_label,
-            report_storage_account,
-            report_path,
-            report_format,
-            report_mode,
-            report_type,
-            report_granularity,
-            label_mapping
+    const { 
+      submitting,
+      name,
+      description,
+      report_status,
+      report_name,
+      report_description,
+      report_id,
+      report_summary,
+      chart_name,
+      chart_description,
+      chart_id,
+      chart_summary,
+      chart_type,
+      x_axis_label,
+      y_axis_label,
+      report_storage_account,
+      report_path,
+      report_format,
+      report_mode,
+      report_type,
+      report_granularity,
+      label_mapping
     } = this.state;
 
     const { role } = this.props
@@ -480,23 +493,24 @@ export default class PublishChartButton extends React.Component {
         </Row>
 
 
-        {((role == 'creator' && !report_status) || (role=='reviewer' && report_status != 'published')) && (
+        {(report_status != 'live' &&
+         ((role == 'creator' && report_status != 'review') || role == 'reviewer' && report_status == 'review')) && (
           <Button
             onClick={this.publishChart}
             type="button"
             bsSize="sm"
             bsStyle="primary"
             className="m-r-5"
-            disabled={submitting || ( role=='creator' && report_status == 'review_submitted')}
+            disabled={submitting}
           >
             {role=='reviewer' && (!submitting ? t('Publish'):t('Publishing'))}
             {role=='creator' && (!submitting ? t('Submit For Review'):t('Submitting'))}
           </Button>
         )}
-        { role=='creator' && report_status == 'review_submitted' && (
+        { role=='creator' && report_status == 'review' && (
           <Badge variant="secondary">Submitted For Review</Badge>
         )}
-        { report_status == 'published' && (
+        { report_status == 'live' && (
           <Badge variant="secondary">Published in Portal</Badge>
         )}
       </div>

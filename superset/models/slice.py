@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text, Boolean
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -65,6 +65,7 @@ class Slice(
     description = Column(Text)
     cache_timeout = Column(Integer)
     perm = Column(String(1000))
+    is_report = Column(Boolean)
     schema_perm = Column(String(1000))
     owners = relationship(security_manager.user_model, secondary=slice_user)
     token = ""
@@ -292,7 +293,7 @@ class Slice(
 
     @property
     def report_url(self) -> str:
-        return f"/superset/report_explore/?form_data=%7B%22slice_id%22%3A%20{self.id}%7D"
+        return f"/reportapi/report_explore/?form_data=%7B%22slice_id%22%3A%20{self.id}%7D"
 
 
 def set_related_perm(mapper, connection, target):

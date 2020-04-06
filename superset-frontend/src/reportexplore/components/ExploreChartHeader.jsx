@@ -51,6 +51,7 @@ const propTypes = {
   form_data: PropTypes.object,
   timeout: PropTypes.number,
   chart: chartPropShape,
+  role: PropTypes.string,
 };
 
 export class ExploreChartHeader extends React.PureComponent {

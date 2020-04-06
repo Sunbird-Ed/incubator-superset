@@ -47,12 +47,6 @@ export default function ExploreActionButtons({
   slice,
   role
 }) {
-  const exportToCSVClasses = cx('btn btn-default btn-sm', {
-    'disabled disabledButton': !canDownload,
-  });
-  const doExportCSV = exportChart.bind(this, latestQueryFormData, 'csv');
-  const doExportChart = exportChart.bind(this, latestQueryFormData, 'json');
-
   return (
     <div className="btn-group results" role="group">
 
@@ -66,44 +60,4 @@ export default function ExploreActionButtons({
   );
 }
 
-// {latestQueryFormData && (
-//   <a
-//     onClick={doExportChart}
-//     className="btn btn-default btn-sm"
-//     title={t('Export to .json')}
-//     target="_blank"
-//     rel="noopener noreferrer"
-//   >
-//     <i className="fa fa-file-code-o" /> .json
-//   </a>
-// )}
-// {latestQueryFormData && (
-//   <URLShortLinkButton
-//     url={getExploreLongUrl(latestQueryFormData)}
-//     emailSubject="Superset Chart"
-//     emailContent="Check out this chart: "
-//   />
-// )}
-
-// {latestQueryFormData && (
-//   <EmbedCodeButton latestQueryFormData={latestQueryFormData} />
-// )}
-// {latestQueryFormData && (
-//   <a
-//     onClick={doExportCSV}
-//     className={exportToCSVClasses}
-//     title={t('Export to .csv format')}
-//     target="_blank"
-//     rel="noopener noreferrer"
-//   >
-//     <i className="fa fa-file-text-o" /> .csv
-//   </a>
-// )}
-// <DisplayQueryButton
-//   queryResponse={queryResponse}
-//   latestQueryFormData={latestQueryFormData}
-//   chartStatus={chartStatus}
-//   onOpenInEditor={actions.redirectSQLLab}
-//   slice={slice}
-// />
 ExploreActionButtons.propTypes = propTypes;

@@ -65,7 +65,7 @@ export function getAnnotationJsonUrl(slice_id, form_data, isNative) {
 
 export function getURIDirectory(formData, endpointType = 'base') {
   // Building the directory part of the URI
-  let directory = '/superset/report_explore/';
+  let directory = '/reportapi/report_explore/';
   if (
     ['json', 'csv', 'query', 'results', 'samples'].indexOf(endpointType) >= 0
   ) {
