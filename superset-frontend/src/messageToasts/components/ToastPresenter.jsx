@@ -37,7 +37,6 @@ const defaultProps = {
 class ToastPresenter extends React.Component {
   render() {
     const { toasts, removeToast } = this.props;
-
     return (
       toasts.length > 0 && (
         <div className="toast-presenter">

@@ -69,7 +69,7 @@ export default function ConfigModalBody ({
   let fieldDisabled = reportStatus != 'draft' && !!reportStatus
 
   return (
-    <div>
+    <div className="config-modal-body">
       <Panel>
         <Panel.Heading><strong>Report Config</strong></Panel.Heading>
         <Panel.Body>
@@ -461,7 +461,7 @@ export default function ConfigModalBody ({
                 />
               </FormGroup>
             </Col>
-            <Col md={6}>
+            <Col md={12}>
               <FormGroup>
                 <label className="control-label" htmlFor="labelMapping">
                   {t('Label Mapping')}
@@ -484,7 +484,7 @@ export default function ConfigModalBody ({
       </Panel>
 
       <Panel>
-        <Panel.Heading><strong>Chart Config</strong></Panel.Heading>
+        <Panel.Heading><strong>Chart Output Config</strong></Panel.Heading>
         <Panel.Body>
           <Row>
             <Col md={6}>
@@ -614,7 +614,7 @@ export default function ConfigModalBody ({
           className="m-r-5"
           disabled={submitting}
         >
-          {role=='creator' && (!submitting ? t('Save'):t('Saving'))}
+          { !submitting ? t('Save'):t('Saving') }
         </Button>
       )}
       { role=='creator' && reportStatus == 'review' && (

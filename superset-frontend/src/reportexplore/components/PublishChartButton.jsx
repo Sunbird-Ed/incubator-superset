@@ -39,6 +39,8 @@ import ModalTrigger from './../../components/ModalTrigger';
 import ConfigModalBody from './ConfigModalBody';
 import { getExploreUrlAndPayload } from '../exploreUtils';
 
+import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
+
 const propTypes = {
   slice: PropTypes.object,
   role: PropTypes.string
@@ -51,6 +53,7 @@ export default class PublishChartButton extends React.Component {
       submitting: false,
       reportList: [],
       chartList: [],
+      toasts: [],
       isNewReport: true,
       isNewChart: true,
       reportStatus: '',
@@ -158,7 +161,7 @@ export default class PublishChartButton extends React.Component {
   }
 
   updateChart = () => {
-    this.setState({ submitting: true });
+    this.setState({ submitting: true, toasts: [] });
     const { slice, role } = this.props
 
     let reportParams = {
@@ -186,7 +189,13 @@ export default class PublishChartButton extends React.Component {
     };
 
     SupersetClient.post({ url: "/reportapi/update_report", postPayload: { form_data: reportParams } }).then(({ json }) => {
-      this.setState({ reportStatus: json.report_status, submitting: false })
+      let toasts = [{
+        id: "sample",
+        toastType: "SUCCESS_TOAST",
+        text: "Report config updated is updated successfully",
+        duration: 2000
+      }]
+      this.setState({ reportStatus: json.report_status, submitting: false, toasts })
       console.log("Successfully updated")
     })
     .catch(() => {
@@ -256,9 +265,12 @@ export default class PublishChartButton extends React.Component {
             </div>
           </Row>
         )}
-        { role == "reviewer" && reportStatus=='review' && (
+        { role == "reviewer" && (reportStatus == 'review' || reportStatus == 'approved') && (
           <Row>
-            Are you sure you want to publish?
+            Are you sure you want to
+            {
+              reportStatus == 'review' ? " approve?" : " publish?"
+            }
             <br/>
             <br/>
             <div>
@@ -270,7 +282,8 @@ export default class PublishChartButton extends React.Component {
                 className="m-r-5"
                 disabled={submitting}
               >
-                {role=='reviewer' && (!submitting ? t('Publish'):t('Publishing'))}
+                {reportStatus=='review' && (!submitting ? t('Approve'):t('Approving'))}
+                {reportStatus=='approved' && (!submitting ? t('Publish'):t('Publishing'))}
               </Button>
             </div>
           </Row>
@@ -284,8 +297,10 @@ export default class PublishChartButton extends React.Component {
             <div>
               Report status: {"  "}
               <strong>
-              {
-                reportStatus == 'live' ? 'Published' : 'Sent for review'
+              { role == "creator" && (reportStatus == 'live' ? 'Published' : 'Sent for review')
+              }
+              { (role == "reviewer") && 
+                (reportStatus == 'live' ? 'Published' : reportStatus == "approved" ? "Approved": "Submitted for review")
               }
               </strong>
             </div>
@@ -299,9 +314,10 @@ export default class PublishChartButton extends React.Component {
             <div>
               <br/>
               <br/>
-              Report Link: {"  "}
-              <a href="https://dev.sunbirded.org/dashBoard/reports/3daa3e65-e419-4f71-bfcf-1032c3ad4c5d">
-                {"https://dev.sunbirded.org/dashBoard/reports/3daa3e65-e419-4f71-bfcf-1032c3ad4c5d"}
+              { role == "reviewer" && reportStatus == "approved" ? "Preview Link" : "Report Link" }
+              {"  "}
+              <a href="https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e">
+                {"https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e"}
               </a>
             </div>
           </Row>
@@ -311,16 +327,16 @@ export default class PublishChartButton extends React.Component {
   }
 
   render() {
-    const { reportStatus } = this.state
+    const { reportStatus, toasts } = this.state
     const { role } = this.props
     // return role == 'creator' || !!report_status ? (
-    return role == 'creator' || role == 'reviewer' ? (
+    return role == 'creator' || (role == 'reviewer' && reportStatus != "draft" && !!reportStatus) ? (
       <span>
         <ModalTrigger
           isButton
           animation={this.props.animation}
-          triggerNode={role == 'creator' ? t('Edit Config') : t('Report Config')}
-          modalTitle={role == 'creator' ? t('Chart config for portal dashboard') : t('Chart config for portal dashboard')}
+          triggerNode={role == 'creator' ? t('Edit Config') : t('View Config')}
+          modalTitle={role == 'creator' ? t('Add/Edit Config') : t('Report Config')}
           bsSize="large"
           modalBody={this.renderQueryModalBody()}
         />
@@ -331,6 +347,10 @@ export default class PublishChartButton extends React.Component {
           modalTitle={role == 'creator' ? t('Submit for review'): t('Publish chart to portal dashboard')}
           bsSize="large"
           modalBody={this.renderConfirmationBody()}
+        />
+        <ToastPresenter
+          toasts={toasts}
+          removeToast={(toastId) => {}}
         />
       </span>
     ) : (<></>);

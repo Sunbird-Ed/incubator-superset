@@ -168,7 +168,7 @@ class ReportAPI(BaseSupersetView):
         standalone = (
             request.args.get(utils.ReservedUrlParameters.STANDALONE.value) == "true"
         )
-        if security_manager.can_access("can_create_report", "ReportAPI"):
+        if security_manager.can_access("can_submit_report", "ReportAPI"):
             role = "creator"
         elif security_manager.can_access("can_publish_report", "ReportAPI"):
             role = "reviewer"
@@ -373,7 +373,7 @@ class ReportAPI(BaseSupersetView):
 
         report = db.session.query(Report).filter_by(slice_id=slice_id).one_or_none()
 
-        if not report or report.report_status != REVIEW:
+        if not report or (report.report_status != REVIEW and report.report_status != APPROVED):
             return json_error_response(
                 _("Report is not submitted for review yet"),
                 status=400,
@@ -397,7 +397,7 @@ class ReportAPI(BaseSupersetView):
             logger.exception(e)
             return json_error_response(e)
 
-        report.report_status = PUBLISHED
+        report.report_status = PUBLISHED if report.report_status == APPROVED else APPROVED
         report.druid_query = query
 
         # self.publish_report_portal(report.data)
