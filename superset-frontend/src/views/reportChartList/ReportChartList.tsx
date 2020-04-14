@@ -403,43 +403,21 @@ class ReportChartList extends React.PureComponent<Props, State> {
               slice={sliceCurrentlyEditing}
             />
           )}
-          <ConfirmStatusChange
-            title={t('Please confirm')}
-            description={t(
-              'Are you sure you want to delete the selected charts?',
-            )}
-            onConfirm={this.handleBulkDashboardDelete}
-          >
-            {confirmDelete => {
-              const bulkActions = [];
-              if (this.canDelete) {
-                bulkActions.push({
-                  key: 'delete',
-                  name: (
-                    <>
-                      <i className="fa fa-trash" /> Delete
-                    </>
-                  ),
-                  onSelect: confirmDelete,
-                });
-              }
-              return (
-                <ListView
-                  className="chart-list-view"
-                  title={'Report Charts'}
-                  columns={this.columns}
-                  data={charts}
-                  count={chartCount}
-                  pageSize={PAGE_SIZE}
-                  fetchData={this.fetchData}
-                  loading={loading}
-                  initialSort={this.initialSort}
-                  filters={filters}
-                  bulkActions={bulkActions}
-                />
-              );
-            }}
-          </ConfirmStatusChange>
+          <a href="/reportchart/add" class="btn btn-sm btn-primary">
+            <i class="fa fa-plus"></i>
+          </a>
+          <ListView
+            className="chart-list-view"
+            title={'Report Charts'}
+            columns={this.columns}
+            data={charts}
+            count={chartCount}
+            pageSize={PAGE_SIZE}
+            fetchData={this.fetchData}
+            loading={loading}
+            initialSort={this.initialSort}
+            filters={filters}
+          />
         </Panel>
       </div>
     );
