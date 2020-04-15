@@ -42,15 +42,6 @@ export default function PublishStatusBody ({
                   Your report has been submitted for review
                 </Alert>
               )}
-              { role == "creator" && reportStatus == 'live' && (
-                <Alert bsStyle="success">
-                  The report is successfully publised to portal. Click on this link (
-                    <a target="_blank" href="https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e">
-                      <u>{"https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e"}</u>
-                    </a>
-                  )
-                </Alert>
-              )}
               { role == "reviewer" && reportStatus == 'approved' && (
                 <Alert>
                   The report is successfully submitted to portal as draft. Click on this link (
@@ -60,9 +51,9 @@ export default function PublishStatusBody ({
                   )
                 </Alert>
               )}
-              { role == "reviewer" && reportStatus == 'live' && (
+              { reportStatus == 'live' && (
                 <Alert bsStyle="success">
-                  The report is successfully published to portal. Click on this link (
+                  The report is successfully updated in portal as Live. Click on this link(
                     <a target="_blank" href="https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e">
                       <u>{"https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e"}</u>
                     </a>
