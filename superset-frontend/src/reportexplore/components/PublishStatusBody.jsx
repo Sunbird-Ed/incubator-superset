@@ -44,20 +44,20 @@ export default function PublishStatusBody ({
               )}
               { role == "reviewer" && reportStatus == 'approved' && (
                 <Alert>
-                  The report is successfully submitted to portal as draft. Click on this link (
+                  The report is successfully submitted to portal as <strong>Draft</strong>. Click on this link (
                     <a target="_blank" href="https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e">
                       <u>{"https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e"}</u>
                     </a>
-                  )
+                  ) to preview the report.
                 </Alert>
               )}
               { reportStatus == 'live' && (
                 <Alert bsStyle="success">
-                  The report is successfully updated in portal as Live. Click on this link(
+                  The report is successfully updated in portal as <strong>Live</strong>. Click on this link(
                     <a target="_blank" href="https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e">
                       <u>{"https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e"}</u>
                     </a>
-                  )
+                  ) to view the report.
                 </Alert>
               )}
             </div>

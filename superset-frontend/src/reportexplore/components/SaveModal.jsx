@@ -156,7 +156,7 @@ class SaveModal extends React.Component {
         if (gotodash) {
           window.location.assign(supersetURL(data.dashboard));
         } else {
-          window.location.assign(data.slice.slice_url);
+          window.location.assign(data.slice.report_url);
         }
       });
     this.props.onHide();

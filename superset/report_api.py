@@ -548,6 +548,12 @@ class ReportAPI(BaseSupersetView):
 
         return json_success(json.dumps(response))
 
+    @staticmethod
+    def remove_extra_filters(filters):
+        """Extra filters are ones inherited from the dashboard's temporary context
+        Those should not be saved when saving the chart"""
+        return [f for f in filters if not f.get("isExtra")]
+
     def save_record(self, record):
         session = db.session()
         msg = _("[{}] [{}] has been saved").format(record.__class__.__name__, record.id)

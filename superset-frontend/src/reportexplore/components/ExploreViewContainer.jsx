@@ -24,7 +24,8 @@ import { connect } from 'react-redux';
 import { t } from '@superset-ui/translation';
 
 import ExploreChartPanel from './ExploreChartPanel';
-import ControlPanelsContainer from './ControlPanelsContainer';
+// import ControlPanelsContainer from './ControlPanelsContainer';
+import ControlPanelsContainer from '../../explore/components/ControlPanelsContainer';
 import SaveModal from './SaveModal';
 import QueryAndSaveBtns from './QueryAndSaveBtns';
 import { getExploreUrlAndPayload, getExploreLongUrl } from '../exploreUtils';

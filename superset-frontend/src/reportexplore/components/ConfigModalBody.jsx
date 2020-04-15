@@ -199,27 +199,29 @@ export default function ConfigModalBody ({
                 </FormControl>
               </FormGroup>
             </Col>
-            <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="reportFrequency">
-                  {t('Report Frequency')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="reportFrequency"
-                  placeholder="Enter Report Frequency"
-                  componentClass="select"
-                  bsSize="sm"
-                  value={reportFrequency}
-                  onChange={event => methods.handleInputChange(event)}
-                >
-                  <option value="">Select Report Frequency</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </FormControl>
-              </FormGroup>
-            </Col>
+            { reportType == "scheduled" && (
+              <Col md={6}>
+                <FormGroup>
+                  <label className="control-label" htmlFor="reportFrequency">
+                    {t('Report Frequency')}
+                  </label>
+                  <FormControl
+                    disabled={fieldDisabled}
+                    name="reportFrequency"
+                    placeholder="Enter Report Frequency"
+                    componentClass="select"
+                    bsSize="sm"
+                    value={reportFrequency}
+                    onChange={event => methods.handleInputChange(event)}
+                  >
+                    <option value="">Select Report Frequency</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </FormControl>
+                </FormGroup>
+              </Col>
+            )}
           </Row>
         </Panel.Body>
       </Panel>

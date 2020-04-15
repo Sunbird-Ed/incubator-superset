@@ -117,11 +117,11 @@ Must Do
 - 8. Add additional options to rolling window - Last 7 Days, Last 15 Days
 Nice to do
 ---------------------------
-1. Left menu bar UI fix
-2. Introduce a 3 second delay for "Saving" action
-3. Report frequency should be disabled when the report type is One time
-4. Move the "Are you sure you want to publish" to below the messager
-5. "Save" from the report chart section is not updating the chart.
+- 1. Left menu bar UI fix
+- 2. Introduce a 3 second delay for "Saving" action
+- 3. Report frequency should be disabled when the report type is One time
+- 4. Move the "Are you sure you want to publish" to below the messager
+- 5. "Save" from the report chart section is not updating the chart.
 6. Dropdown of the dimensions should come from the query
 7. Disable left menu query window for reviewer
 Don't do
