@@ -403,8 +403,8 @@ class ReportChartList extends React.PureComponent<Props, State> {
               slice={sliceCurrentlyEditing}
             />
           )}
-          <a href="/reportchart/add" class="btn btn-sm btn-primary">
-            <i class="fa fa-plus"></i>
+          <a href="/reportchart/add" className="btn btn-sm btn-primary">
+            <i className="fa fa-plus"></i>
           </a>
           <ListView
             className="chart-list-view"

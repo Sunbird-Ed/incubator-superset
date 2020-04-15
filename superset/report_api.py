@@ -234,6 +234,9 @@ class ReportAPI(BaseSupersetView):
         if not report:
             report = Report(slice_id=slice_id)
 
+        report.is_new_report = form_data["isNewReport"]
+        report.is_new_chart = form_data["isNewChart"]
+
         report.report_id = form_data["reportId"]
         report.report_name = form_data["reportName"]
         report.report_description = form_data["reportDescription"]
@@ -254,7 +257,6 @@ class ReportAPI(BaseSupersetView):
         report.label_mapping = form_data["labelMapping"]
 
         report.report_format = form_data["reportFormat"]
-        report.metrics = json.dumps(form_data["metrics"])
         report.dimensions = json.dumps(form_data["dimensions"])
 
         report.slice_id = form_data['sliceId']

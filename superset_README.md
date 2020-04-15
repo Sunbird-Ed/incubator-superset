@@ -84,7 +84,7 @@ Chart Config
     - Label Mapping - JSON
 Chart Output Config
     - Format - DropDown (CSV, JSON)
-    - Metrics - Keyword/Multi-select (List metrics to be output to file. Defaults to *)
+    - Metrics - Keyword/Multi-select (List metrics to be output to file. Defaults to )
     - Dimensions - Keyword/Multi-select (List of dimensions to be appended to file)
 -----
 -----
@@ -93,9 +93,39 @@ Must do
 1. Setup the superset instance in prod vpc
 2. Make the report config changes as suggested above
 3. Send for review should only display the message that the report/chart is sent for review. Do not show the report url
+
 Nice to have
 ---------------
 1. Approve and Publish workflow
 2. Approve to display the message that the report is saved as draft along with the report link
 3. Publish to display the message that the report is live along with the report link
 4. UI clean-ups
+
+
+-------
+Superset
+-----------------------------------------
+Must Do
+---------------------------
+- 1. Change "Are you sure you want to submit for review?" to "Please click Save before you submit for review. Are you sure you want to submit for review?"
+- 2. Correct the spelling or Report Type for One Time
+- 3. Remove the metrics field
+- 4. Rename "Add to existing chart" to "Edit Chart"
+- 5. "Edit Chart" option is not selectable
+- 6. Change the text "Report status: Sent for review" to "Your report has been submitted for review". Style it as bootstrap alert (alert-success)
+- 7. Approve message should be changed to "The report is successfully submitted to portal as draft. Click on this link (https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e) to preview the report" as bootstrap alert
+- 8. Add additional options to rolling window - Last 7 Days, Last 15 Days
+Nice to do
+---------------------------
+1. Left menu bar UI fix
+2. Introduce a 3 second delay for "Saving" action
+3. Report frequency should be disabled when the report type is One time
+4. Move the "Are you sure you want to publish" to below the messager
+5. "Save" from the report chart section is not updating the chart.
+6. Dropdown of the dimensions should come from the query
+7. Disable left menu query window for reviewer
+Don't do
+---------------------------
+1. Detecting a change in query and alerting user or auto saving during submit for review
+2. Introduce a new role called "ReportAdmin". Only this role has permission to add report summary or chart summary and publish the report
+3. Report reviewer can only approve the report. He can modify the report/chart summary

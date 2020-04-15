@@ -60,7 +60,6 @@ def upgrade():
         sa.Column("label_mapping", sa.Text(), nullable=False),
 
         sa.Column("report_format", sa.String(length=250), nullable=False),
-        sa.Column("metrics", sa.Text(), nullable=True),
         sa.Column("dimensions", sa.Text(), nullable=True),
         sa.Column("report_status", sa.String(length=100), nullable=False),
 

@@ -38,7 +38,6 @@ class Report(
     label_mapping = Column(Text)
 
     report_format = Column(String(250))
-    metrics = Column(String(250))
     dimensions = Column(String(250))
     report_status = Column(String(100))
 
@@ -73,7 +72,6 @@ class Report(
             "labelMapping": self.label_mapping,
 
             "reportFormat": self.report_format,
-            "metrics": json.loads(self.metrics),
             "dimensions": json.loads(self.dimensions),
             "reportStatus": self.report_status,
 

@@ -37,9 +37,10 @@ import { SupersetClient } from '@superset-ui/connection';
 import CopyToClipboard from './../../components/CopyToClipboard';
 import ModalTrigger from './../../components/ModalTrigger';
 import ConfigModalBody from './ConfigModalBody';
+import PublishStatusBody from './PublishStatusBody';
 import { getExploreUrlAndPayload } from '../exploreUtils';
 
-import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
+import ToastPresenter from '../../messageToasts/components/ToastPresenter';
 
 const propTypes = {
   slice: PropTypes.object,
@@ -79,7 +80,6 @@ export default class PublishChartButton extends React.Component {
       reportGranularity: '',
       labelMapping: '{}',
       confirmationPopupTitle: "",
-      metrics: [],
       metricOptions: [{label: "Count", value: "count"}, {label: "Count Distinct", value: "countDistinct"}],
       dimensions: [],
       dimensionOptions: [{label: "Board", value: "Board"}, {label: "District", value: "District"}]
@@ -96,44 +96,23 @@ export default class PublishChartButton extends React.Component {
 
   handleRadio = (name, value) => {
     let additionalChanges = {}
-    const { chartId, reportId, reportList } = this.state
+    const { chartId, reportId, reportList, chartList } = this.state
 
     if(['isNewReport', 'isNewChart'].includes(name)){
       if(name == "isNewReport" && value) {
-        additionalChanges.reportName = ''
-        additionalChanges.reportDescription = ''
         additionalChanges.reportId = ''
-        additionalChanges.reportSummary = ''
+        additionalChanges.chartId = ''
         additionalChanges.isNewChart = true
-      } else if(name == "isNewReport") {
-        if (!!reportId){
-          let selectedReportObj = reportList.filter((x) => x.report_id == reportId)
-          additionalChanges.reportId = selectedReportObj.report_id
-          additionalChanges.reportName = selectedReportObj.report_name
-          additionalChanges.reportDescription = selectedReportObj.report_description
-          additionalChanges.reportSummary = selectedReportObj.report_summary
-          additionalChanges.isNewChart = true
-        }
       }
 
       if(name == "isNewChart" && value) {
         additionalChanges.chartId = ''
-        additionalChanges.chartName = ''
-        additionalChanges.chartDescription = ''
-        additionalChanges.chartSummary = ''
-      } else if(name == "isNewChart") {
-        if (!!reportId) {
-          let selectedChartObj = reportList.charts.filter((x) => x.report_id == chartId)
-          additionalChanges.chartId = selectedChartObj.chartid
-          additionalChanges.chartName = selectedChartObj.title
-          additionalChanges.chartDescription = selectedChartObj.description
-          additionalChanges.chartSummary = selectedChartObj.summary
-        }
       }
     }
 
     this.setState({
-      [name]: value
+      [name]: value,
+      ...additionalChanges
     });
   }
 
@@ -165,6 +144,8 @@ export default class PublishChartButton extends React.Component {
     const { slice, role } = this.props
 
     let reportParams = {
+      isNewReport: this.state.isNewReport,
+      isNewChart: this.state.isNewChart,
       reportId: this.state.reportId,
       reportName: this.state.reportName,
       reportDescription: this.state.reportDescription,
@@ -183,7 +164,6 @@ export default class PublishChartButton extends React.Component {
       yAxisLabel: this.state.yAxisLabel,
       labelMapping: this.state.labelMapping,
       reportFormat: this.state.reportFormat,
-      metrics: this.state.metrics,
       dimensions: this.state.dimensions,
       sliceId: slice.slice_id
     };
@@ -192,8 +172,8 @@ export default class PublishChartButton extends React.Component {
       let toasts = [{
         id: "sample",
         toastType: "SUCCESS_TOAST",
-        text: "Report config updated is updated successfully",
-        duration: 2000
+        text: "<h5>Report config is updated successfully</h5>",
+        duration: 3000
       }]
       this.setState({ reportStatus: json.report_status, submitting: false, toasts })
       console.log("Successfully updated")
@@ -232,7 +212,6 @@ export default class PublishChartButton extends React.Component {
         methods={{
           handleRadio: this.handleRadio,
           handleInputChange: this.handleInputChange,
-          publishChart: this.publishChart,
           updateChart: this.updateChart
         }}
         role={role}
@@ -241,88 +220,13 @@ export default class PublishChartButton extends React.Component {
   }
 
   renderConfirmationBody() {
-    const { submitting, reportStatus } = this.state;
-    const { role } = this.props
-
     return (
-      <div>
-        { role == "creator" && reportStatus=='draft' && (
-          <Row>
-            Are you sure you want to submit for review?
-            <br/>
-            <br/>
-            <div>
-              <Button
-                onClick={this.publishChart}
-                type="button"
-                bsSize="sm"
-                bsStyle="primary"
-                className="m-r-5"
-                disabled={submitting}
-              >
-                {role=='creator' && (!submitting ? t('Submit'):t('Submitting'))}
-              </Button>
-            </div>
-          </Row>
-        )}
-        { role == "reviewer" && (reportStatus == 'review' || reportStatus == 'approved') && (
-          <Row>
-            Are you sure you want to
-            {
-              reportStatus == 'review' ? " approve?" : " publish?"
-            }
-            <br/>
-            <br/>
-            <div>
-              <Button
-                onClick={this.publishChart}
-                type="button"
-                bsSize="sm"
-                bsStyle="primary"
-                className="m-r-5"
-                disabled={submitting}
-              >
-                {reportStatus=='review' && (!submitting ? t('Approve'):t('Approving'))}
-                {reportStatus=='approved' && (!submitting ? t('Publish'):t('Publishing'))}
-              </Button>
-            </div>
-          </Row>
-        )}
-        <br/>
-        { (
-            (role == "creator" && reportStatus!='draft') || 
-            (role == "reviewer" && ['live', 'approved'].includes(reportStatus))
-          ) && (
-          <Row>
-            <div>
-              Report status: {"  "}
-              <strong>
-              { role == "creator" && (reportStatus == 'live' ? 'Published' : 'Sent for review')
-              }
-              { (role == "reviewer") && 
-                (reportStatus == 'live' ? 'Published' : reportStatus == "approved" ? "Approved": "Submitted for review")
-              }
-              </strong>
-            </div>
-          </Row>
-        )}
-        { (
-            (role == "creator" && reportStatus == 'live') || 
-            (role == "reviewer" && ['live', 'approved'].includes(reportStatus))
-          ) && (
-          <Row>
-            <div>
-              <br/>
-              <br/>
-              { role == "reviewer" && reportStatus == "approved" ? "Preview Link" : "Report Link" }
-              {"  "}
-              <a href="https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e">
-                {"https://dev.sunbirded.org/dashBoard/reports/e9f4c2f1-c20c-4a30-9a2c-d064c9fba53e"}
-              </a>
-            </div>
-          </Row>
-        )}
-      </div>
+      <PublishStatusBody
+        submitting={this.state.submitting}
+        role={this.props.role}
+        reportStatus={this.state.reportStatus}
+        publishChart={this.publishChart}
+      />
     )
   }
 

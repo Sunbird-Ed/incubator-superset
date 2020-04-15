@@ -2,10 +2,7 @@ import React from 'react';
 import Select from 'react-select';
 import PropTypes from 'prop-types';
 import { 
-  Popover,
-  OverlayTrigger,
   Button,
-  Modal,
   Row,
   Col,
   FormControl,
@@ -198,7 +195,7 @@ export default function ConfigModalBody ({
                 >
                   <option value="">Select Report Type</option>
                   <option value="scheduled">Scheduled</option>
-                  <option value="on-time">On-Time</option>
+                  <option value="one-time">One Time</option>
                 </FormControl>
               </FormGroup>
             </Col>
@@ -244,7 +241,7 @@ export default function ConfigModalBody ({
                          disabled={fieldDisabled}
                          checked={!isNewChart}
                          onClick={event => methods.handleRadio("isNewChart", false)} inline>
-                    Add to existing chart
+                    Edit Chart
                   </Radio>
                 </FormGroup>
               </Col>
@@ -379,6 +376,8 @@ export default function ConfigModalBody ({
                   onChange={event => methods.handleInputChange(event)}
                 >
                   <option value="">Select Rolling Window</option>
+                  <option value="7days">Last 7 Days</option>
+                  <option value="15days">Last 15 Days</option>
                   <option value="1month">30 days</option>
                   <option value="6months">6 months</option>
                   <option value="ytd">Year-to-date</option>
@@ -509,24 +508,6 @@ export default function ConfigModalBody ({
             </Col>
             <Col md={6}>
               <FormGroup>
-                <label className="control-label" htmlFor="metrics">
-                  {t('Metrics')}
-                </label>
-                <Select
-                  isMulti
-                  isDisabled={fieldDisabled}
-                  name="metrics"
-                  multi={true}
-                  options={metricOptions}
-                  value={metrics}
-                  onChange={(optionValue) => {
-                    methods.handleInputChange({currentTarget: {value: optionValue, name: "metrics"}})
-                  }}
-                />
-              </FormGroup>
-            </Col>
-            <Col md={6}>
-              <FormGroup>
                 <label className="control-label" htmlFor="dimensions">
                   {t('Dimensions')}
                 </label>
@@ -546,64 +527,6 @@ export default function ConfigModalBody ({
           </Row>
         </Panel.Body>
       </Panel>
-{/*
-      <Row>
-
-      </Row>
-      <Row>
-        <Col md={6}>
-          <FormGroup>
-            <label className="control-label" htmlFor="reportStorageAccount">
-              {t('Report Storage Account')}
-            </label>
-            <FormControl
-              disabled={fieldDisabled}
-              name="reportStorageAccount"
-              placeholder="Enter Report Storage Account"
-              type="text"
-              bsSize="sm"
-              value={reportStorageAccount}
-              onChange={event => methods.handleInputChange(event)}
-            />
-          </FormGroup>
-        </Col>
-        <Col md={6}>
-          <FormGroup>
-            <label className="control-label" htmlFor="reportPath">
-              {t('Report Path')}
-            </label>
-            <FormControl
-              disabled={fieldDisabled}
-              name="reportPath"
-              placeholder="Enter Report Path"
-              type="text"
-              bsSize="sm"
-              value={reportPath}
-              onChange={event => methods.handleInputChange(event)}
-            />
-          </FormGroup>
-        </Col>
-        <Col md={6}>
-          <FormGroup>
-            <label className="control-label" htmlFor="reportFormat">
-              {t('Report Format')}
-            </label>
-            <FormControl
-              disabled={fieldDisabled}
-              name="reportFormat"
-              placeholder="Enter Report Format"
-              componentClass="select"
-              bsSize="sm"
-              value={reportFormat}
-              onChange={event => methods.handleInputChange(event)}
-            >
-              <option value="csv">CSV</option>
-              <option value="json">JSON</option>
-            </FormControl>
-          </FormGroup>
-        </Col>
-      </Row>*/}
-
 
       {role == 'creator' && (reportStatus == 'draft' || !reportStatus) && (
         <Button
@@ -627,4 +550,4 @@ export default function ConfigModalBody ({
   )
 }
 
-ConfigModalBody.propTypes = propTypes; 
+ConfigModalBody.propTypes = propTypes;
