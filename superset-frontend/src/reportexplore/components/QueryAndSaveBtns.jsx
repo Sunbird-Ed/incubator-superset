@@ -31,12 +31,14 @@ const propTypes = {
   loading: PropTypes.bool,
   chartIsStale: PropTypes.bool,
   errorMessage: PropTypes.node,
+  role: PropTypes.string
 };
 
 const defaultProps = {
   onStop: () => {},
   onSave: () => {},
   disabled: false,
+  role: ""
 };
 
 export default function QueryAndSaveBtns({
@@ -47,6 +49,7 @@ export default function QueryAndSaveBtns({
   loading,
   chartIsStale,
   errorMessage,
+  role
 }) {
   const saveClasses = classnames({
     'disabled disabledButton': canAdd !== 'True',
@@ -79,15 +82,17 @@ export default function QueryAndSaveBtns({
     <div>
       <ButtonGroup className="query-and-save">
         {qryOrStopButton}
-        <Button
-          className={saveClasses}
-          data-target="#save_modal"
-          data-toggle="modal"
-          disabled={saveButtonDisabled}
-          onClick={onSave}
-        >
-          <i className="fa fa-plus-circle" /> Save
-        </Button>
+        { role == "creator" && (
+          <Button
+            className={saveClasses}
+            data-target="#save_modal"
+            data-toggle="modal"
+            disabled={saveButtonDisabled}
+            onClick={onSave}
+          >
+            <i className="fa fa-plus-circle" /> Save
+          </Button>
+        )}
       </ButtonGroup>
       {errorMessage && (
         <span>

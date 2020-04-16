@@ -34,6 +34,7 @@ export default function ConfigModalBody ({
     isNewChart,
     reportList,
     chartList,
+    dimensionsList,
     reportStatus,
     reportName,
     reportDescription,
@@ -59,8 +60,7 @@ export default function ConfigModalBody ({
     selectedChart,
     metrics,
     metricOptions,
-    dimensions,
-    dimensionOptions
+    dimensions
   } = configData;
 
   let fieldDisabled = reportStatus != 'draft' && !!reportStatus
@@ -518,7 +518,7 @@ export default function ConfigModalBody ({
                   isDisabled={fieldDisabled}
                   name="dimensions"
                   multi={true}
-                  options={dimensionOptions}
+                  options={dimensionsList}
                   value={dimensions}
                   onChange={(optionValue) => {
                     methods.handleInputChange({currentTarget: {value: optionValue, name: "dimensions"}})

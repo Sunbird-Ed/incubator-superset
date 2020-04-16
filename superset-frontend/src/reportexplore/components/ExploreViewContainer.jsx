@@ -24,8 +24,7 @@ import { connect } from 'react-redux';
 import { t } from '@superset-ui/translation';
 
 import ExploreChartPanel from './ExploreChartPanel';
-// import ControlPanelsContainer from './ControlPanelsContainer';
-import ControlPanelsContainer from '../../explore/components/ControlPanelsContainer';
+import ControlPanelsContainer from './ControlPanelsContainer';
 import SaveModal from './SaveModal';
 import QueryAndSaveBtns from './QueryAndSaveBtns';
 import { getExploreUrlAndPayload, getExploreLongUrl } from '../exploreUtils';
@@ -353,6 +352,7 @@ class ExploreViewContainer extends React.Component {
             >
               <QueryAndSaveBtns
                 canAdd="True"
+                role={this.props.role}
                 onQuery={this.onQuery}
                 onSave={this.toggleModal}
                 onStop={this.onStop}

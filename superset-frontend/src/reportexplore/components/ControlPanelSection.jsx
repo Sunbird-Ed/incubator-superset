@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -77,11 +78,15 @@ export default class ControlPanelSection extends React.Component {
     return (
       <Panel
         className="control-panel-section"
-        collapsible
         expanded={this.state.expanded}
-        header={this.renderHeader()}
+        onToggle={this.toggleExpand}
       >
-        {this.props.children}
+        <Panel.Heading>
+          <Panel.Title>{this.renderHeader()}</Panel.Title>
+        </Panel.Heading>
+        <Panel.Collapse>
+          <Panel.Body>{this.props.children}</Panel.Body>
+        </Panel.Collapse>
       </Panel>
     );
   }

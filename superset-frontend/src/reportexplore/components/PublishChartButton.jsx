@@ -54,6 +54,7 @@ export default class PublishChartButton extends React.Component {
       submitting: false,
       reportList: [],
       chartList: [],
+      dimensionsList: [],
       toasts: [],
       isNewReport: true,
       isNewChart: true,
@@ -82,7 +83,6 @@ export default class PublishChartButton extends React.Component {
       confirmationPopupTitle: "",
       metricOptions: [{label: "Count", value: "count"}, {label: "Count Distinct", value: "countDistinct"}],
       dimensions: [],
-      dimensionOptions: [{label: "Board", value: "Board"}, {label: "District", value: "District"}]
     };
   }
 
@@ -117,8 +117,12 @@ export default class PublishChartButton extends React.Component {
   }
 
   componentWillMount = async function(){
+    const { slice } = this.props
+
+    let dimensionsList = slice.form_data.groupby.map(dim => { return { label: dim, value: dim }})
+
     let report_config = await SupersetClient.get({
-      url: `/reportapi/report_config/${this.props.slice.slice_id}`,
+      url: `/reportapi/report_config/${slice.slice_id}`,
     }).catch(() =>
       console.log("error::report config loaded")
     );
@@ -135,7 +139,8 @@ export default class PublishChartButton extends React.Component {
       ...this.state,
       ...report_config.json.data,
       reportList: reportList.json.data,
-      chartList: reportList.json.data[0].charts
+      chartList: reportList.json.data[0].charts,
+      dimensionsList
     })
   }
 
@@ -231,9 +236,10 @@ export default class PublishChartButton extends React.Component {
   }
 
   render() {
+
     const { reportStatus, toasts } = this.state
     const { role } = this.props
-    // return role == 'creator' || !!report_status ? (
+
     return role == 'creator' || (role == 'reviewer' && reportStatus != "draft" && !!reportStatus) ? (
       <span>
         <ModalTrigger
