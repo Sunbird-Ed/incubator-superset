@@ -44,12 +44,14 @@ import ToastPresenter from '../../messageToasts/components/ToastPresenter';
 
 const propTypes = {
   slice: PropTypes.object,
-  role: PropTypes.string
+  role: PropTypes.string,
+  reportData: PropTypes.object,
 };
 
 export default class PublishChartButton extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       submitting: false,
       reportList: [],
@@ -83,6 +85,10 @@ export default class PublishChartButton extends React.Component {
       confirmationPopupTitle: "",
       metricOptions: [{label: "Count", value: "count"}, {label: "Count Distinct", value: "countDistinct"}],
       dimensions: [],
+      metrics: [],
+      invalidFields: [],
+      validations: {},
+      ...props.reportData,
     };
   }
 
@@ -91,22 +97,35 @@ export default class PublishChartButton extends React.Component {
     const name = e.currentTarget.name;
     const data = {};
     data[name] = value;
-    this.setState(data);
+    this.setState(data, () => { 
+      let fieldType = ["labelMapping", "dimensions"].includes(name) ? name == "dimensions" ? "array" : "json": "string"
+      this.validateField(name, fieldType)
+    });
   }
 
   handleRadio = (name, value) => {
     let additionalChanges = {}
-    const { chartId, reportId, reportList, chartList } = this.state
+    const {
+      chartId,
+      reportId,
+      reportList,
+      chartList,
+      reportName,
+      chartName
+    } = this.state
 
-    if(['isNewReport', 'isNewChart'].includes(name)){
-      if(name == "isNewReport" && value) {
-        additionalChanges.reportId = ''
-        additionalChanges.chartId = ''
+    if(['isNewReport', 'isNewChart'].includes(name) && value){
+      if(name == "isNewReport") {
+        this.generateId(reportName, "report", true)
         additionalChanges.isNewChart = true
       }
 
-      if(name == "isNewChart" && value) {
-        additionalChanges.chartId = ''
+      this.generateId(chartName, "chart", true)
+    } else if(['isNewReport', 'isNewChart'].includes(name) && !value) {
+      if(name == "isNewReport") {
+        additionalChanges.reportId = ""
+      } else {
+        additionalChanges.chartId = ""
       }
     }
 
@@ -116,35 +135,93 @@ export default class PublishChartButton extends React.Component {
     });
   }
 
-  componentWillMount = async function(){
-    const { slice } = this.props
-
-    let dimensionsList = slice.form_data.groupby.map(dim => { return { label: dim, value: dim }})
-
-    let report_config = await SupersetClient.get({
-      url: `/reportapi/report_config/${slice.slice_id}`,
-    }).catch(() =>
-      console.log("error::report config loaded")
-    );
-
-    let reportList = await SupersetClient.get({
-      url: "/reportapi/list_reports",
-    }).catch(() =>
-      console.log("error::reports loaded")
-    );
-
-    // reportList
-
-    await this.setState({
-      ...this.state,
-      ...report_config.json.data,
-      reportList: reportList.json.data,
-      chartList: reportList.json.data[0].charts,
-      dimensionsList
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    this.setState({
+      ...nextProps.reportData
     })
   }
 
+  generateId = (value, type, isNew) => {
+    if(isNew) {
+      let newId = value.replace(/[^A-Z0-9]+/ig, "_");
+      let stateVar = `${type}Id`
+
+      let isAvailable = this.state[`${type}List`].find((value) => {
+        return value[`${type}id`] == newId
+      })
+
+      newId = !!isAvailable ? newId + "1" : newId
+
+      this.setState({
+        [stateVar]: newId
+      })
+    }
+  }
+
+  validateField = (fieldName, fieldType='string') => {
+    let { validations } = this.state
+    let fieldValue = this.state[fieldName]
+    if (fieldType=='string') {
+      if (!!!fieldValue) {
+        validations[fieldName] = {
+          message: "Required field"
+        }
+      } else {
+        validations[fieldName] = null
+      }
+    } else if (fieldType=='array' || fieldType=='json') {
+
+      validations[fieldName] = null
+      let value = undefined;
+      if(typeof(fieldValue) == "object") {
+        value = fieldValue
+      } else {
+        try {
+          value = JSON.parse(fieldValue)
+        } catch(err) {
+          validations[fieldName] = {
+            message: `Invalid ${fieldType}`
+          }
+        }
+      }
+
+      if (!!!validations[fieldName]) {
+        value = fieldType=='array' ? value : Object.keys(value)
+        if(value.length < 1) {
+          validations[fieldName] = {
+            message: "Required field"
+          }
+        }
+      }
+    }
+    this.setState({
+      validations
+    })
+    return !!!validations[fieldName]
+  }
+
+  isValidForm = () => {
+    let configs = [
+      "reportId","reportName","reportDescription","reportType",
+      "reportFrequency","chartId","chartName","chartDescription",
+      "chartGranularity","rollingWindow","chartType","chartMode","xAxisLabel",
+      "yAxisLabel","labelMapping","reportFormat","dimensions"
+    ]
+
+    if (this.state.reportType == 'one-time') {
+      configs.splice(configs.indexOf("reportFrequency"), 1)
+    }
+    let invalidFields = configs.filter((name) => {
+      let fieldType = ["labelMapping", "dimensions"].includes(name) ? name == "dimensions" ? "array" : "json": "string"
+      return !this.validateField(name, fieldType)
+    })
+    return invalidFields.length == 0
+  }
+
   updateChart = () => {
+    if (!this.isValidForm()) {
+      return false
+    }
     this.setState({ submitting: true, toasts: [] });
     const { slice, role } = this.props
 
@@ -217,7 +294,8 @@ export default class PublishChartButton extends React.Component {
         methods={{
           handleRadio: this.handleRadio,
           handleInputChange: this.handleInputChange,
-          updateChart: this.updateChart
+          updateChart: this.updateChart,
+          generateId: this.generateId
         }}
         role={role}
       />

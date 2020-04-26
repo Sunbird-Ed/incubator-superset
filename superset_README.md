@@ -1,3 +1,14 @@
+Integration meeting
+
+    Tech review in superset
+        review of process and others should be in portal
+
+    reportid is always from superset
+
+
+
+
+
 processes for Superset new page
 
     create permissions 
@@ -122,10 +133,38 @@ Nice to do
 - 3. Report frequency should be disabled when the report type is One time
 - 4. Move the "Are you sure you want to publish" to below the messager
 - 5. "Save" from the report chart section is not updating the chart.
-6. Dropdown of the dimensions should come from the query
-7. Disable left menu query window for reviewer
+- 6. Dropdown of the dimensions should come from the query
+- 7. Disable left menu query window for reviewer
+- 8. the query window should be disabled when sent for review as well
+9. And the header new chart should go to report charts page
 Don't do
 ---------------------------
 1. Detecting a change in query and alerting user or auto saving during submit for review
 2. Introduce a new role called "ReportAdmin". Only this role has permission to add report summary or chart summary and publish the report
 3. Report reviewer can only approve the report. He can modify the report/chart summary
+
+Algo:
+1. Submit for review Superset
+2. Publish as draft
+3. Generate Druid Query from superset and store it db
+4.1. By Report service API, create Report config or update report config if it is getting added to report. And update the status back in db.
+4.2. After report service API call, create Report config in Analytics API. And update the status back in db.
+
+
+
+HE-15
+-    Remove the add chart summary and report summary sections
+
+-    Auto generate the report and chart id with the report and chart name
+
+-   All fields are required
+
+-    Chart name and id should be unique within a report
+
+-    Report id should be unique
+
+-    Label mapping should be json
+
+-    X and Y axis fields needs to be provided as input. The input should be a single select from the query dimensions and metrics
+
+-    Dimensions should be on one axis and metrics on another. We cannot have the same on both

@@ -69,7 +69,7 @@ export function getURIDirectory(formData, endpointType = 'base') {
   if (
     ['json', 'csv', 'query', 'results', 'samples'].indexOf(endpointType) >= 0
   ) {
-    directory = '/superset/explore_json/';
+    directory = '/reportapi/report_explore/';
   }
   return directory;
 }

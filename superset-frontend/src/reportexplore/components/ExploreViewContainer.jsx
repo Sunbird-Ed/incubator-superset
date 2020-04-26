@@ -22,6 +22,7 @@ import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { t } from '@superset-ui/translation';
+import { SupersetClient } from '@superset-ui/connection';
 
 import ExploreChartPanel from './ExploreChartPanel';
 import ControlPanelsContainer from './ControlPanelsContainer';
@@ -80,6 +81,7 @@ class ExploreViewContainer extends React.Component {
       showModal: false,
       chartIsStale: false,
       refreshOverlayVisible: false,
+      reportData: {}
     };
 
     this.addHistory = this.addHistory.bind(this);
@@ -151,6 +153,58 @@ class ExploreViewContainer extends React.Component {
     ) {
       this.addHistory({});
     }
+  }
+
+  componentWillMount = async function(){
+    const { slice } = this.props
+
+    let dimensionsList = slice.form_data.groupby.map(dim => { return { label: dim, value: dim }})
+
+    let metrics = slice.form_data.metrics.map((metr) => {
+      let value = undefined
+      if(typeof(metr) == "object") {
+        value = { label: metr.label, value: metr.label }
+      } else {
+        value = { label: metr, value: metr }
+      }
+      return value
+    })
+    console.log(metrics)
+    let report_config = await SupersetClient.get({
+      url: `/reportapi/report_config/${slice.slice_id}`,
+    }).catch(() =>
+      console.log("error::report config loaded")
+    );
+
+    let reportList = await SupersetClient.get({
+      url: "/reportapi/list_reports",
+    }).catch(() =>
+      console.log("error::reports loaded")
+    );
+
+    reportList = reportList.json.data
+
+    let chartList = reportList.reduce((initialValue, value) => {
+      let charts = value.charts.map((chart) => {
+        chart.reportid = value.report_id
+        return chart
+      })
+      initialValue = initialValue.concat(charts)
+
+      return initialValue
+    }, [])
+
+    let reportData = {
+      ...report_config.json.data,
+      reportList,
+      chartList,
+      dimensionsList,
+      metrics
+    }
+
+    await this.setState({
+      reportData
+    })
   }
 
   componentWillUnmount() {
@@ -320,6 +374,7 @@ class ExploreViewContainer extends React.Component {
         addHistory={this.addHistory}
         onQuery={this.onQuery.bind(this)}
         role={this.props.role}
+        reportData={this.state.reportData}
       />
     );
   }
@@ -360,6 +415,7 @@ class ExploreViewContainer extends React.Component {
                 chartIsStale={this.state.chartIsStale}
                 errorMessage={this.renderErrorMessage()}
                 datasourceType={this.props.datasource_type}
+                reportStatus={this.state.reportData.reportStatus}
               />
               <div className="m-l-5 text-muted">
                 <Hotkeys

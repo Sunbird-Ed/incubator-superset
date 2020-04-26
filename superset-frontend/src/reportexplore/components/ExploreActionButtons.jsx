@@ -36,6 +36,7 @@ const propTypes = {
   queryResponse: PropTypes.object,
   slice: PropTypes.object,
   role: PropTypes.string,
+  reportData: PropTypes.object,
 };
 
 export default function ExploreActionButtons({
@@ -45,7 +46,8 @@ export default function ExploreActionButtons({
   latestQueryFormData,
   queryResponse,
   slice,
-  role
+  role,
+  reportData
 }) {
   return (
     <div className="btn-group results" role="group">
@@ -54,6 +56,7 @@ export default function ExploreActionButtons({
         latestQueryFormData={latestQueryFormData}
         slice={slice}
         role={role}
+        reportData={reportData}
       />
 
     </div>

@@ -52,6 +52,7 @@ const propTypes = {
   timeout: PropTypes.number,
   chart: chartPropShape,
   role: PropTypes.string,
+  reportData: PropTypes.object,
 };
 
 export class ExploreChartHeader extends React.PureComponent {
@@ -212,6 +213,7 @@ export class ExploreChartHeader extends React.PureComponent {
             latestQueryFormData={latestQueryFormData}
             queryResponse={queryResponse}
             role={this.props.role}
+            reportData={this.props.reportData}
           />
         </div>
       </div>

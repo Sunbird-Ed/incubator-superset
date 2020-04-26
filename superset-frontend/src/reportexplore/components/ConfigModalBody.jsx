@@ -14,6 +14,8 @@ import {
 
 import { t } from '@superset-ui/translation';
 
+import ConfigInputControl from './controls/ConfigInputControl';
+
 const propTypes = {
   configData: PropTypes.object,
   methods: PropTypes.object,
@@ -60,7 +62,9 @@ export default function ConfigModalBody ({
     selectedChart,
     metrics,
     metricOptions,
-    dimensions
+    dimensions,
+    validations,
+    invalidFields
   } = configData;
 
   let fieldDisabled = reportStatus != 'draft' && !!reportStatus
@@ -89,79 +93,70 @@ export default function ConfigModalBody ({
             </Col>
           </Row>
           <Row>
+            <Col md={6}>
+              <ConfigInputControl
+                inputType="text"
+                title={t('Report Name')}
+                fieldName="reportName"
+                placeholder="Enter Report Name"
+                validation={validations["reportName"]}
+                onChange={(event) => {
+                  methods.handleInputChange(event);
+                  methods.generateId(event.currentTarget.value, "report", isNewReport)
+                }}
+                disabled={fieldDisabled}
+                value={reportName}
+              />
+            </Col>
             { !isNewReport && (
               <Col md={6}>
-                <FormGroup>
-                  <label className="control-label" htmlFor="reportId">
-                    {t('Reports')}
-                  </label>
-                  <FormControl
-                    disabled={fieldDisabled}
-                    name="reportId"
-                    componentClass="select"
-                    bsSize="sm"
-                    value={reportId}
-                    onChange={event => methods.handleInputChange(event)}
-                  >
-                    <option value="">Select Report</option>
-                    { reportList.map((x) => (<option value={x['report_id']}>{x['report_name']}</option>) )}
-                  </FormControl>
-                </FormGroup>
+                <ConfigInputControl
+                  inputType="select"
+                  title={t('Report ID')}
+                  fieldName="reportId"
+                  placeholder="Enter Report ID"
+                  validation={validations["reportId"]}
+                  onChange={(event) => {
+                    methods.handleInputChange(event)
+                    if (!isNewChart) {
+                      methods.handleInputChange({currentTarget: {value: "", name: "chartId"}})
+                    }
+                  }}
+                  disabled={fieldDisabled}
+                  value={reportId}
+                >
+                  <option value="">Select Report</option>
+                  { reportList.map((x) => (<option value={x['reportid']}>{x['report_name']}</option>) )}
+                </ConfigInputControl>
               </Col>
             )}
             { isNewReport && (
               <Col md={6}>
-                <FormGroup>
-                  <label className="control-label" htmlFor="reportId">
-                    {t('Report ID')}
-                  </label>
-                  <FormControl
-                    disabled={fieldDisabled}
-                    name="reportId"
-                    placeholder="Enter Report ID"
-                    type="text"
-                    bsSize="sm"
-                    value={reportId}
-                    onChange={event => methods.handleInputChange(event)}
-                  />
-                </FormGroup>
+                <ConfigInputControl
+                  inputType="text"
+                  title={t('Report ID')}
+                  fieldName="reportId"
+                  placeholder="Enter Report ID"
+                  validation={validations["reportId"]}
+                  onChange={methods.handleInputChange}
+                  disabled={fieldDisabled}
+                  value={reportId}
+                />
               </Col>
             )}
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="reportName">
-                  {t('Report Name')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="reportName"
-                  type="text"
-                  placeholder="Enter Report Name"
-                  bsSize="sm"
-                  value={reportName}
-                  onChange={event => methods.handleInputChange(event)}
-                />
-              </FormGroup>
-            </Col>
-            <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="reportDescription">
-                  {t('Report Description')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="reportDescription"
-                  placeholder="Enter Report Description"
-                  type="text"
-                  componentClass="textarea"
-                  bsSize="sm"
-                  value={reportDescription}
-                  onChange={event => methods.handleInputChange(event)}
-                  style={{ maxWidth: '100%' }}
-                />
-              </FormGroup>
+              <ConfigInputControl
+                inputType="textarea"
+                title={t('Report Description')}
+                fieldName="reportDescription"
+                placeholder="Enter Report Description"
+                validation={validations["reportDescription"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={reportDescription}
+              />
             </Col>              
-            <Col md={6}>
+            {/*<Col md={6}>
               <FormGroup>
                 <label className="control-label" htmlFor="reportSummary">
                   {t('Report Summary')}
@@ -178,48 +173,42 @@ export default function ConfigModalBody ({
                   style={{ maxWidth: '100%' }}
                 />
               </FormGroup>
-            </Col>
+            </Col>*/}
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="reportType">
-                  {t('Report Type')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="reportType"
-                  placeholder="Enter Report Type"
-                  componentClass="select"
-                  bsSize="sm"
-                  value={reportType}
-                  onChange={event => methods.handleInputChange(event)}
-                >
-                  <option value="">Select Report Type</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="one-time">One Time</option>
-                </FormControl>
-              </FormGroup>
+              <ConfigInputControl
+                inputType="select"
+                title={t('Report Type')}
+                fieldName="reportType"
+                placeholder="Enter Report Type"
+                validation={validations["reportType"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={reportType}
+              >
+                <option value="">Select Report Type</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="one-time">One Time</option>
+              </ConfigInputControl>
             </Col>
+          </Row>
+          <Row>
             { reportType == "scheduled" && (
               <Col md={6}>
-                <FormGroup>
-                  <label className="control-label" htmlFor="reportFrequency">
-                    {t('Report Frequency')}
-                  </label>
-                  <FormControl
-                    disabled={fieldDisabled}
-                    name="reportFrequency"
-                    placeholder="Enter Report Frequency"
-                    componentClass="select"
-                    bsSize="sm"
-                    value={reportFrequency}
-                    onChange={event => methods.handleInputChange(event)}
-                  >
-                    <option value="">Select Report Frequency</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </FormControl>
-                </FormGroup>
+                <ConfigInputControl
+                  inputType="select"
+                  title={t('Report Frequency')}
+                  fieldName="reportFrequency"
+                  placeholder="Enter Report Frequency"
+                  validation={validations["reportFrequency"]}
+                  onChange={methods.handleInputChange}
+                  disabled={fieldDisabled}
+                  value={reportFrequency}
+                >
+                  <option value="">Select Report Frequency</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </ConfigInputControl>
               </Col>
             )}
           </Row>
@@ -251,80 +240,65 @@ export default function ConfigModalBody ({
           )}
 
           <Row>
+            <Col md={6}>
+              <ConfigInputControl
+                inputType="text"
+                title={t('Chart Name')}
+                fieldName="chartName"
+                placeholder="Enter Chart Name"
+                validation={validations["chartName"]}
+                onChange={(event) => {
+                  methods.handleInputChange(event);
+                  methods.generateId(event.currentTarget.value, "chart", isNewChart)
+                }}
+                disabled={fieldDisabled}
+                value={chartName}
+              />
+            </Col>
             { !isNewReport && !isNewChart && (
               <Col md={6}>
-                <FormGroup>
-                  <label className="control-label" htmlFor="chartId">
-                    {t('Charts')}
-                  </label>
-                  <FormControl
-                    disabled={fieldDisabled}
-                    name="chartId"
-                    componentClass="select"
-                    bsSize="sm"
-                    value={chartId}
-                    onChange={event => methods.handleInputChange(event)}
-                  >
-                    <option value="">Select Chart</option>
-                    { chartList.map((x) => (<option value={x['chartid']}>{x['title']}</option>) )}
-                  </FormControl>
-                </FormGroup>
+                <ConfigInputControl
+                  inputType="select"
+                  title={t('Charts')}
+                  fieldName="chartId"
+                  validation={validations["chartId"]}
+                  onChange={methods.handleInputChange}
+                  disabled={fieldDisabled}
+                  value={chartId}
+                >
+                  <option value="">Select Chart</option>
+                  { chartList.filter((x) => x.reportid == reportId).map((x) => (<option value={x['chartid']}>{x['title']}</option>) )}
+                </ConfigInputControl>
               </Col>
             )}
 
             { (isNewReport || isNewChart) && (
               <Col md={6}>
-                <FormGroup>
-                  <label className="control-label" htmlFor="chartId">
-                    {t('Chart ID')}
-                  </label>
-                  <FormControl
-                    disabled={fieldDisabled}
-                    name="chartId"
-                    placeholder="Enter Chart ID"
-                    type="text"
-                    bsSize="sm"
-                    value={chartId}
-                    onChange={event => methods.handleInputChange(event)}
-                  />
-                </FormGroup>
+                <ConfigInputControl
+                  inputType="text"
+                  title={t('Chart ID')}
+                  fieldName="chartId"
+                  placeholder="Enter Chart ID"
+                  validation={validations["chartId"]}
+                  onChange={methods.handleInputChange}
+                  disabled={fieldDisabled}
+                  value={chartId}
+                />
               </Col>
             )}
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="chartName">
-                  {t('Chart Name')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="chartName"
-                  placeholder="Enter Chart Name"
-                  type="text"
-                  bsSize="sm"
-                  value={chartName}
-                  onChange={event => methods.handleInputChange(event)}
-                />
-              </FormGroup>
-            </Col>
-            <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="chartDescription">
-                  {t('Chart Description')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="chartDescription"
-                  placeholder="Enter Chart Description"
-                  type="text"
-                  componentClass="textarea"
-                  bsSize="sm"
-                  value={chartDescription}
-                  onChange={event => methods.handleInputChange(event)}
-                  style={{ maxWidth: '100%' }}
-                />
-              </FormGroup>
+              <ConfigInputControl
+                inputType="textarea"
+                title={t('Chart Description')}
+                fieldName="chartDescription"
+                placeholder="Enter Chart chartDescription"
+                validation={validations["chartDescription"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={chartDescription}
+              />
             </Col>            
-            <Col md={6}>
+            {/*<Col md={6}>
               <FormGroup>
                 <label className="control-label" htmlFor="chartSummary">
                   {t('Chart Summary')}
@@ -341,144 +315,117 @@ export default function ConfigModalBody ({
                   style={{ maxWidth: '100%' }}
                 />
               </FormGroup>
+            </Col>*/}
+          </Row>
+          <Row>
+            <Col md={6}>
+              <ConfigInputControl
+                inputType="select"
+                title={t('Report Granularity')}
+                fieldName="chartGranularity"
+                validation={validations["chartGranularity"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={chartGranularity}
+              >
+                <option value="">Select Report Granularity</option>
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+              </ConfigInputControl>
             </Col>
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="chartGranularity">
-                  {t('Report Granularity')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="chartGranularity"
-                  placeholder="Enter Report Granularity"
-                  componentClass="select"
-                  bsSize="sm"
-                  value={chartGranularity}
-                  onChange={event => methods.handleInputChange(event)}
-                >
-                  <option value="">Select Report Granularity</option>
-                  <option value="day">Day</option>
-                  <option value="week">Week</option>
-                  <option value="month">Month</option>
-                </FormControl>
-              </FormGroup>
+              <ConfigInputControl
+                inputType="select"
+                title={t('Rolling Window')}
+                fieldName="rollingWindow"
+                validation={validations["rollingWindow"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={rollingWindow}
+              >
+                <option value="">Select Rolling Window</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="15days">Last 15 Days</option>
+                <option value="1month">30 days</option>
+                <option value="6months">6 months</option>
+                <option value="ytd">Year-to-date</option>
+                <option value="academic">Academic year</option>
+              </ConfigInputControl>
             </Col>
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="rollingWindow">
-                  {t('Rolling Window')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="rollingWindow"
-                  placeholder="Rolling Window"
-                  componentClass="select"
-                  bsSize="sm"
-                  value={rollingWindow}
-                  onChange={event => methods.handleInputChange(event)}
-                >
-                  <option value="">Select Rolling Window</option>
-                  <option value="7days">Last 7 Days</option>
-                  <option value="15days">Last 15 Days</option>
-                  <option value="1month">30 days</option>
-                  <option value="6months">6 months</option>
-                  <option value="ytd">Year-to-date</option>
-                  <option value="academic">Academic year</option>
-                </FormControl>
-              </FormGroup>
+              <ConfigInputControl
+                inputType="select"
+                title={t('Chart Type')}
+                fieldName="chartType"
+                validation={validations["chartType"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={chartType}
+              >
+                <option value="">Select Chart Type</option>
+                <option value="Line">Line</option>
+                <option value="column">Column</option>
+                <option value="bar">Bar</option>
+                <option value="pie">Pie</option>
+                <option value="stackedbar">Stacked bar</option>
+                <option value="barvertical">Bar-vertical</option>
+              </ConfigInputControl>
             </Col>
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="chartType">
-                  {t('Chart Type')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="chartType"
-                  componentClass="select"
-                  bsSize="sm"
-                  value={chartType}
-                  onChange={event => methods.handleInputChange(event)}
-                >
-                  <option value="">Select Chart Type</option>
-                  <option value="Line">Line</option>
-                  <option value="column">Column</option>
-                  <option value="bar">Bar</option>
-                  <option value="pie">Pie</option>
-                  <option value="stackedbar">Stacked bar</option>
-                  <option value="barvertical">Bar-vertical</option>
-                </FormControl>
-              </FormGroup>
+              <ConfigInputControl
+                inputType="select"
+                title={t('Chart Mode')}
+                fieldName="chartMode"
+                validation={validations["chartMode"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={chartMode}
+              >
+                <option value="">Select Chart Mode</option>
+                <option value="replace">Replace</option>
+                <option value="add">Add</option>
+              </ConfigInputControl>
             </Col>
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="chartMode">
-                  {t('Chart Mode')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="chartMode"
-                  placeholder="Enter Chart Mode"
-                  componentClass="select"
-                  bsSize="sm"
-                  value={chartMode}
-                  onChange={event => methods.handleInputChange(event)}
-                >
-                  <option value="">Select Chart Mode</option>
-                  <option value="replace">Replace</option>
-                  <option value="add">Add</option>
-                </FormControl>
-              </FormGroup>
+              <ConfigInputControl
+                inputType="select"
+                title={t('X-Axis Label')}
+                fieldName="xAxisLabel"
+                validation={validations["xAxisLabel"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={xAxisLabel}
+              >
+                <option value="">Select X-Axis</option>
+                { dimensionsList.map((x) => (<option value={x['value']}>{x['label']}</option>) )}
+              </ConfigInputControl>
             </Col>
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="xAxisLabel">
-                  {t('X-Axis Label')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="xAxisLabel"
-                  placeholder="Enter X-Axis Label"
-                  type="text"
-                  bsSize="sm"
-                  value={xAxisLabel}
-                  onChange={event => methods.handleInputChange(event)}
-                />
-              </FormGroup>
-            </Col>
-            <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="yAxisLabel">
-                  {t('Y-Axis Label')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="yAxisLabel"
-                  placeholder="Enter Y-Axis Label"
-                  type="text"
-                  bsSize="sm"
-                  value={yAxisLabel}
-                  onChange={event => methods.handleInputChange(event)}
-                />
-              </FormGroup>
+              <ConfigInputControl
+                inputType="select"
+                title={t('Y-Axis Label')}
+                fieldName="yAxisLabel"
+                validation={validations["yAxisLabel"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={yAxisLabel}
+              >
+                <option value="">Select Y-Axis</option>
+                { metrics.map((x) => (<option value={x['value']}>{x['label']}</option>) )}
+              </ConfigInputControl>
             </Col>
             <Col md={12}>
-              <FormGroup>
-                <label className="control-label" htmlFor="labelMapping">
-                  {t('Label Mapping')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="labelMapping"
-                  type="text"
-                  componentClass="textarea"
-                  placeholder="Enter JSON (For all fields)"
-                  bsSize="sm"
-                  value={labelMapping}
-                  onChange={event => methods.handleInputChange(event)}
-                  style={{ maxWidth: '100%' }}
-                />
-              </FormGroup>
+              <ConfigInputControl
+                inputType="textarea"
+                title={t('Label Mapping')}
+                fieldName="labelMapping"
+                placeholder="Enter JSON (For all fields)"
+                validation={validations["labelMapping"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={labelMapping}
+              />
             </Col>
           </Row>
         </Panel.Body>
@@ -489,24 +436,19 @@ export default function ConfigModalBody ({
         <Panel.Body>
           <Row>
             <Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="reportFormat">
-                  {t('Report Format')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="reportFormat"
-                  placeholder="Enter Report Format"
-                  componentClass="select"
-                  bsSize="sm"
-                  value={reportFormat}
-                  onChange={event => methods.handleInputChange(event)}
-                >
-                  <option value="">Select Report Format</option>
-                  <option value="csv">CSV</option>
-                  <option value="json">JSON</option>
-                </FormControl>
-              </FormGroup>
+              <ConfigInputControl
+                inputType="select"
+                title={t('Report Format')}
+                fieldName="reportFormat"
+                validation={validations["reportFormat"]}
+                onChange={methods.handleInputChange}
+                disabled={fieldDisabled}
+                value={reportFormat}
+              >
+                <option value="">Select Report Format</option>
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </ConfigInputControl>
             </Col>
             <Col md={6}>
               <FormGroup>
@@ -517,6 +459,7 @@ export default function ConfigModalBody ({
                   isMulti
                   isDisabled={fieldDisabled}
                   name="dimensions"
+                  className={!!validations["dimensions"] ? 'not-selected': ''}
                   multi={true}
                   options={dimensionsList}
                   value={dimensions}
@@ -532,7 +475,7 @@ export default function ConfigModalBody ({
 
       {role == 'creator' && (reportStatus == 'draft' || !reportStatus) && (
         <Button
-          onClick={methods.updateChart}
+          onClick={() => methods.updateChart()}
           type="button"
           bsSize="sm"
           bsStyle="primary"

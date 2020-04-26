@@ -47,6 +47,7 @@ const propTypes = {
   errorMessage: PropTypes.node,
   triggerRender: PropTypes.bool,
   role: PropTypes.string.isRequired,
+  reportData: PropTypes.object
 };
 
 class ExploreChartPanel extends React.PureComponent {
@@ -109,6 +110,7 @@ class ExploreChartPanel extends React.PureComponent {
         timeout={this.props.timeout}
         chart={this.props.chart}
         role={this.props.role}
+        reportData={this.props.reportData}
       />
     );
     return (
