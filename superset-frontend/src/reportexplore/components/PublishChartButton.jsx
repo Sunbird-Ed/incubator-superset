@@ -88,6 +88,8 @@ export default class PublishChartButton extends React.Component {
       metrics: [],
       invalidFields: [],
       validations: {},
+      publishedReportId: "",
+      portalHost: "",
       ...props.reportData,
     };
   }
@@ -116,14 +118,14 @@ export default class PublishChartButton extends React.Component {
 
     if(['isNewReport', 'isNewChart'].includes(name) && value){
       if(name == "isNewReport") {
-        this.generateId(reportName, "report", true)
+        // this.generateId(reportName, "report", true)
         additionalChanges.isNewChart = true
       }
 
       this.generateId(chartName, "chart", true)
     } else if(['isNewReport', 'isNewChart'].includes(name) && !value) {
       if(name == "isNewReport") {
-        additionalChanges.reportId = ""
+        additionalChanges.reportId = undefined
       } else {
         additionalChanges.chartId = ""
       }
@@ -155,6 +157,7 @@ export default class PublishChartButton extends React.Component {
       this.setState({
         [stateVar]: newId
       })
+      this.validateField(stateVar)
     }
   }
 
@@ -205,11 +208,14 @@ export default class PublishChartButton extends React.Component {
       "reportId","reportName","reportDescription","reportType",
       "reportFrequency","chartId","chartName","chartDescription",
       "chartGranularity","rollingWindow","chartType","chartMode","xAxisLabel",
-      "yAxisLabel","labelMapping","reportFormat","dimensions"
+      "yAxisLabel","labelMapping","dimensions"
     ]
 
     if (this.state.reportType == 'one-time') {
       configs.splice(configs.indexOf("reportFrequency"), 1)
+    }
+    if (this.state.isNewReport) {
+      configs.splice(configs.indexOf("reportId"), 1)
     }
     let invalidFields = configs.filter((name) => {
       let fieldType = ["labelMapping", "dimensions"].includes(name) ? name == "dimensions" ? "array" : "json": "string"
@@ -245,7 +251,7 @@ export default class PublishChartButton extends React.Component {
       xAxisLabel: this.state.xAxisLabel,
       yAxisLabel: this.state.yAxisLabel,
       labelMapping: this.state.labelMapping,
-      reportFormat: this.state.reportFormat,
+      // reportFormat: this.state.reportFormat,
       dimensions: this.state.dimensions,
       sliceId: slice.slice_id
     };
@@ -257,7 +263,7 @@ export default class PublishChartButton extends React.Component {
         text: "<h5>Report config is updated successfully</h5>",
         duration: 3000
       }]
-      this.setState({ reportStatus: json.report_status, submitting: false, toasts })
+      this.setState({ reportStatus: json.report_status, reportId: json.report_id, submitting: false, toasts })
       console.log("Successfully updated")
     })
     .catch(() => {
@@ -277,7 +283,11 @@ export default class PublishChartButton extends React.Component {
 
 
     SupersetClient.post({ url, postPayload: { form_data: reportParams } }).then(({ json }) => {
-      this.setState({ reportStatus: json.report_status, submitting: false })
+      this.setState({
+        reportStatus: json.report_status,
+        submitting: false,
+        publishedReportId: json.report_id
+      })
       console.log("Successfully submitted for review")
     })
     .catch(() => {
@@ -309,6 +319,8 @@ export default class PublishChartButton extends React.Component {
         role={this.props.role}
         reportStatus={this.state.reportStatus}
         publishChart={this.publishChart}
+        publishedReportId={this.state.publishedReportId}
+        portalHost={this.state.portalHost}
       />
     )
   }

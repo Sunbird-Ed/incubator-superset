@@ -65,7 +65,6 @@ class Slice(
     description = Column(Text)
     cache_timeout = Column(Integer)
     perm = Column(String(1000))
-    is_report = Column(Boolean)
     schema_perm = Column(String(1000))
     owners = relationship(security_manager.user_model, secondary=slice_user)
     token = ""

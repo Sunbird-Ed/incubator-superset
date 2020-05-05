@@ -32,21 +32,39 @@ import sqlalchemy as sa
 
 def upgrade():
     op.create_table(
-        "reports",
+        "hawkeye_reports",
+        sa.Column("id", sa.Integer(), nullable=False, autoincrement=True),
         sa.Column("created_on", sa.DateTime(), nullable=False),
         sa.Column("changed_on", sa.DateTime(), nullable=False),
-        sa.Column("id", sa.Integer(), nullable=False, autoincrement=True),
         sa.Column("is_new_report", sa.Boolean(), nullable=True),
-        sa.Column("is_new_chart", sa.Boolean(), nullable=True),
 
-        sa.Column("report_id", sa.String(length=250), nullable=False),
         sa.Column("report_name", sa.String(length=250), nullable=False),
         sa.Column("report_description", sa.String(length=250), nullable=False),
         sa.Column("report_summary", sa.Text(), nullable=True),
         sa.Column("report_type", sa.String(length=250), nullable=False),
         sa.Column("report_frequency", sa.String(length=250), nullable=True),
-        sa.Column("report_granularity", sa.String(length=250), nullable=True),
+        sa.Column("report_status", sa.String(length=250), nullable=True),        
+        sa.Column("published_report_id", sa.String(length=250), nullable=True),
+        sa.Column("published_report_status", sa.String(length=100), nullable=True),
 
+        sa.Column(
+            "created_by_fk", sa.Integer(), sa.ForeignKey("ab_user.id"), nullable=True
+        ),
+        sa.Column(
+            "changed_by_fk", sa.Integer(), sa.ForeignKey("ab_user.id"), nullable=True
+        ),
+        
+        sa.PrimaryKeyConstraint("id")
+    )
+
+    op.create_table(
+        "hawkeye_charts",
+        sa.Column("id", sa.Integer(), nullable=False, autoincrement=True),
+        sa.Column("created_on", sa.DateTime(), nullable=False),
+        sa.Column("changed_on", sa.DateTime(), nullable=False),
+        sa.Column("reviewed_on", sa.DateTime(), nullable=True),
+        sa.Column("published_on", sa.DateTime(), nullable=True),
+        sa.Column("is_new_chart", sa.Boolean(), nullable=True),
         sa.Column("chart_id", sa.String(length=250), nullable=False),
         sa.Column("chart_name", sa.String(length=250), nullable=False),
         sa.Column("chart_description", sa.String(length=250), nullable=True),
@@ -57,33 +75,32 @@ def upgrade():
         sa.Column("chart_mode", sa.String(length=250), nullable=False),
         sa.Column("x_axis_label", sa.String(length=250), nullable=False),
         sa.Column("y_axis_label", sa.String(length=250), nullable=False),
-        sa.Column("label_mapping", sa.Text(), nullable=False),
-
-        sa.Column("report_format", sa.String(length=250), nullable=False),
-        sa.Column("dimensions", sa.Text(), nullable=True),
-        sa.Column("report_status", sa.String(length=100), nullable=False),
-
-        sa.Column("report_storage_account", sa.String(length=250), nullable=True),
-        sa.Column("report_path", sa.String(length=250), nullable=True),
-        sa.Column("druid_query", sa.Text(), nullable=True),
+        sa.Column("label_mapping", sa.JSON(), nullable=False),
+        sa.Column("dimensions", sa.JSON(), nullable=True),
+        sa.Column("druid_query", sa.JSON(), nullable=True),
+        sa.Column("submitted_as_job", sa.Boolean(), nullable=True),
+        sa.Column("chart_status", sa.String(length=100), nullable=False),
+        sa.Column("created_by", sa.String(length=100), nullable=True),
+        sa.Column("reviewed_by", sa.String(length=100), nullable=True),
+        sa.Column(
+            "hawkeye_report_id", sa.Integer(), sa.ForeignKey("hawkeye_reports.id"), nullable=True
+        ),
+        sa.Column(
+            "slice_id", sa.Integer(), sa.ForeignKey("slices.id"), nullable=True
+        ),
         sa.Column(
             "created_by_fk", sa.Integer(), sa.ForeignKey("ab_user.id"), nullable=True
         ),
         sa.Column(
             "changed_by_fk", sa.Integer(), sa.ForeignKey("ab_user.id"), nullable=True
         ),
-        
         sa.Column(
-            "slice_id", sa.Integer(), sa.ForeignKey("slices.id"), nullable=True
+            "reviewed_by_fk", sa.Integer(), sa.ForeignKey("ab_user.id"), nullable=True
         ),
         sa.PrimaryKeyConstraint("id")
     )
 
-    op.add_column(
-        "slices", sa.Column("is_report", sa.Boolean(), nullable=True)
-    )
-
 
 def downgrade():
-    op.drop_table("reports")
-    op.drop_column("slices", "is_report")
+    op.drop_table("hawkeye_charts")
+    op.drop_table("hawkeye_reports")

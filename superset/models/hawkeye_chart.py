@@ -1,30 +1,26 @@
 import simplejson as json
+import os
 
 from flask_appbuilder import Model
 from typing import Any, Dict
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text, Boolean
+from sqlalchemy.orm import backref, relationship
 from superset.models.helpers import AuditMixinNullable, ImportMixin
+from superset.models.hawkeye_report import HawkeyeReport
 
-class Report(
+class HawkeyeChart(
     Model, AuditMixinNullable, ImportMixin
 ):  # pylint: disable=too-many-public-methods
 
     """A report"""
-    __tablename__ = "reports"
+    __tablename__ = "hawkeye_charts"
 
     id = Column(Integer, primary_key=True)  # pylint: disable=invalid-name
-    is_new_report = Column(Boolean)
     is_new_chart = Column(Boolean)
 
-    report_id = Column(String(250))
-    report_name = Column(String(250))
-    report_description = Column(String(250))
-    report_summary = Column(Text)
-    report_type = Column(String(250))
-    report_frequency = Column(String(250))
-    # report_granularity = Column(String(250))
-
+    hawkeye_report_id = Column(Integer, ForeignKey("hawkeye_reports.id"), nullable=False)
+    slice_id = Column(Integer, ForeignKey("slices.id"), nullable=False)
     chart_id = Column(String(250))
     chart_name = Column(String(250))
     chart_description = Column(String(250))
@@ -36,28 +32,40 @@ class Report(
     x_axis_label = Column(String(250))
     y_axis_label = Column(String(250))
     label_mapping = Column(Text)
-
-    report_format = Column(String(250))
     dimensions = Column(String(250))
-    report_status = Column(String(100))
-
-    report_storage_account = Column(String(250))
-    report_path = Column(String(250))
     druid_query = Column(Text)
-    slice_id = Column(Integer)
+    submitted_as_job = Column(Boolean)
+
+    chart_status = Column(String(100))
+    created_by = Column(String(100))
+    reviewed_by = Column(String(100))
+
+
+    hawkeye_report = relationship(
+        HawkeyeReport,
+        foreign_keys=[hawkeye_report_id],
+        backref=backref("charts", cascade="all, delete-orphan"),
+    )
+
+    slice_rec = relationship(
+        "Slice",
+        foreign_keys=[slice_id],
+        backref=backref("charts", cascade="all, delete-orphan"),
+    )
 
     @property
     def data(self) -> Dict[str, Any]:
         return {
-            "isNewReport": True if self.is_new_report is None or self.is_new_report else False ,
+            "isNewReport": True,
             "isNewChart": True if self.is_new_chart is None or self.is_new_chart else False,
 
-            "reportId": self.report_id,
-            "reportName": self.report_name,
-            "reportDescription": self.report_description,
-            "reportSummary": self.report_summary,
-            "reportType": self.report_type,
-            "reportFrequency": self.report_frequency,
+            "reportId": self.hawkeye_report.id,
+            "reportName": self.hawkeye_report.report_name,
+            "reportDescription": self.hawkeye_report.report_description,
+            "reportSummary": self.hawkeye_report.report_summary,
+            "reportType": self.hawkeye_report.report_type,
+            "reportFrequency": self.hawkeye_report.report_frequency,
+            "publishedReportId": self.hawkeye_report.published_report_id,
 
             "chartId": self.chart_id,
             "chartName": self.chart_name,
@@ -69,14 +77,10 @@ class Report(
             "chartMode": self.chart_mode,
             "xAxisLabel": self.x_axis_label,
             "yAxisLabel": self.y_axis_label,
-            "labelMapping": self.label_mapping,
+            "labelMapping": json.dumps(self.label_mapping),
 
-            "reportFormat": self.report_format,
-            "dimensions": json.loads(self.dimensions),
-            "reportStatus": self.report_status,
+            "dimensions": self.dimensions,
+            "reportStatus": self.chart_status,
 
-            # "reportStorageAccount": self.report_storage_account,
-            # "reportPath": self.report_path,
-            # "reportGranularity": self.report_granularity,
             "sliceId": self.slice_id
         }

@@ -102,7 +102,7 @@ export default function ConfigModalBody ({
                 validation={validations["reportName"]}
                 onChange={(event) => {
                   methods.handleInputChange(event);
-                  methods.generateId(event.currentTarget.value, "report", isNewReport)
+                  {/*methods.generateId(event.currentTarget.value, "report", isNewReport)*/}
                 }}
                 disabled={fieldDisabled}
                 value={reportName}
@@ -112,7 +112,7 @@ export default function ConfigModalBody ({
               <Col md={6}>
                 <ConfigInputControl
                   inputType="select"
-                  title={t('Report ID')}
+                  title={t('Reports')}
                   fieldName="reportId"
                   placeholder="Enter Report ID"
                   validation={validations["reportId"]}
@@ -126,11 +126,11 @@ export default function ConfigModalBody ({
                   value={reportId}
                 >
                   <option value="">Select Report</option>
-                  { reportList.map((x) => (<option value={x['reportid']}>{x['report_name']}</option>) )}
+                  { reportList.map((x) => (<option value={x['reportId']}>{x['reportName']}</option>) )}
                 </ConfigInputControl>
               </Col>
             )}
-            { isNewReport && (
+            {/*{ isNewReport && (
               <Col md={6}>
                 <ConfigInputControl
                   inputType="text"
@@ -143,7 +143,9 @@ export default function ConfigModalBody ({
                   value={reportId}
                 />
               </Col>
-            )}
+            )}*/}
+          </Row>
+          <Row>
             <Col md={6}>
               <ConfigInputControl
                 inputType="textarea"
@@ -190,8 +192,6 @@ export default function ConfigModalBody ({
                 <option value="one-time">One Time</option>
               </ConfigInputControl>
             </Col>
-          </Row>
-          <Row>
             { reportType == "scheduled" && (
               <Col md={6}>
                 <ConfigInputControl
@@ -205,9 +205,9 @@ export default function ConfigModalBody ({
                   value={reportFrequency}
                 >
                   <option value="">Select Report Frequency</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
+                  <option value="DAILY">Daily</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="MONTHLY">Monthly</option>
                 </ConfigInputControl>
               </Col>
             )}
@@ -267,12 +267,12 @@ export default function ConfigModalBody ({
                   value={chartId}
                 >
                   <option value="">Select Chart</option>
-                  { chartList.filter((x) => x.reportid == reportId).map((x) => (<option value={x['chartid']}>{x['title']}</option>) )}
+                  { chartList.filter((x) => x.reportId == reportId).map((x) => (<option value={x['chartId']}>{x['chartName']}</option>) )}
                 </ConfigInputControl>
               </Col>
             )}
 
-            { (isNewReport || isNewChart) && (
+            {/*{ (isNewReport || isNewChart) && (
               <Col md={6}>
                 <ConfigInputControl
                   inputType="text"
@@ -285,7 +285,9 @@ export default function ConfigModalBody ({
                   value={chartId}
                 />
               </Col>
-            )}
+            )}*/}
+          </Row>
+          <Row>
             <Col md={6}>
               <ConfigInputControl
                 inputType="textarea"
@@ -329,9 +331,10 @@ export default function ConfigModalBody ({
                 value={chartGranularity}
               >
                 <option value="">Select Report Granularity</option>
-                <option value="day">Day</option>
-                <option value="week">Week</option>
-                <option value="month">Month</option>
+                <option value="DAY">Day</option>
+                <option value="WEEK">Week</option>
+                <option value="MONTH">Month</option>
+                <option value="ALL">All</option>
               </ConfigInputControl>
             </Col>
             <Col md={6}>
@@ -345,12 +348,15 @@ export default function ConfigModalBody ({
                 value={rollingWindow}
               >
                 <option value="">Select Rolling Window</option>
-                <option value="7days">Last 7 Days</option>
-                <option value="15days">Last 15 Days</option>
-                <option value="1month">30 days</option>
-                <option value="6months">6 months</option>
-                <option value="ytd">Year-to-date</option>
-                <option value="academic">Academic year</option>
+                <option value="LastDay">Last 1 Day</option>
+                <option value="Last7Days">Last 7 Days</option>
+                <option value="LastWeek">Last Week</option>
+                <option value="Last30Days">30 days</option>
+                <option value="LastMonth">Last month</option>
+                <option value="YTD">Year-to-date</option>
+                <option value="AcademicYear">Academic year</option>
+                {/*<option value="15days">Last 15 Days</option>*/}
+                {/*<option value="6months">6 months</option>*/}
               </ConfigInputControl>
             </Col>
             <Col md={6}>
@@ -364,7 +370,7 @@ export default function ConfigModalBody ({
                 value={chartType}
               >
                 <option value="">Select Chart Type</option>
-                <option value="Line">Line</option>
+                <option value="line">Line</option>
                 <option value="column">Column</option>
                 <option value="bar">Bar</option>
                 <option value="pie">Pie</option>
@@ -435,7 +441,7 @@ export default function ConfigModalBody ({
         <Panel.Heading><strong>Chart Output Config</strong></Panel.Heading>
         <Panel.Body>
           <Row>
-            <Col md={6}>
+            {/*<Col md={6}>
               <ConfigInputControl
                 inputType="select"
                 title={t('Report Format')}
@@ -449,7 +455,7 @@ export default function ConfigModalBody ({
                 <option value="csv">CSV</option>
                 <option value="json">JSON</option>
               </ConfigInputControl>
-            </Col>
+            </Col>*/}
             <Col md={6}>
               <FormGroup>
                 <label className="control-label" htmlFor="dimensions">
@@ -480,7 +486,7 @@ export default function ConfigModalBody ({
           bsSize="sm"
           bsStyle="primary"
           className="m-r-5"
-          disabled={submitting}
+          disabled={false}
         >
           { !submitting ? t('Save'):t('Saving') }
         </Button>

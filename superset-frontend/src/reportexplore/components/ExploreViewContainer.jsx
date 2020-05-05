@@ -185,11 +185,7 @@ class ExploreViewContainer extends React.Component {
     reportList = reportList.json.data
 
     let chartList = reportList.reduce((initialValue, value) => {
-      let charts = value.charts.map((chart) => {
-        chart.reportid = value.report_id
-        return chart
-      })
-      initialValue = initialValue.concat(charts)
+      initialValue = initialValue.concat(value.charts)
 
       return initialValue
     }, [])

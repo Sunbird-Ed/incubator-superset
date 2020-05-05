@@ -1,5 +1,6 @@
 import simplejson as json
 import pdb
+import os
 import requests as http_client
 
 from flask_appbuilder.security.decorators import has_access, has_access_api
@@ -9,7 +10,8 @@ from flask_babel import lazy_gettext as _
 
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.utils.decorators import etag_cache, stats_timing
-from superset.models.report import Report
+from superset.models.hawkeye_chart import HawkeyeChart
+from superset.models.hawkeye_report import HawkeyeReport
 from superset.models.slice import Slice
 from superset import (
     app,
@@ -36,12 +38,18 @@ from superset.views.utils import (
 
 config = app.config
 SQLLAB_QUERY_COST_ESTIMATE_TIMEOUT = config["SQLLAB_QUERY_COST_ESTIMATE_TIMEOUT"]
-PORTAL_API_HOST = "https://hawkeye-reports-server.herokuapp.com"
+PORTAL_API_HOST = os.environ['PORTAL_API_HOST']
+PORTAL_API_KEY = os.environ['PORTAL_API_KEY']
+ANALYTICS_API_KEY = os.environ['ANALYTICS_API_KEY']
+ANALYTICS_API_HOST = os.environ['ANALYTICS_API_HOST']
+PORTAL_HOST = os.environ['PORTAL_HOST']
+
 stats_logger = config["STATS_LOGGER"]
 REVIEW = "review"
 APPROVED = "approved"
 DRAFT = "draft"
 PUBLISHED = "live"
+
 
 def is_owner(obj, user):
     """ Check if user is owner of the slice """
@@ -229,45 +237,54 @@ class ReportAPI(BaseSupersetView):
                 status=400,
             )
 
-        report = db.session.query(Report).filter_by(slice_id=slice_id).one_or_none()
+        chart = db.session.query(HawkeyeChart).filter_by(slice_id=slice_id).one_or_none()
 
-        if not report:
-            report = Report(slice_id=slice_id)
-
-        report.is_new_report = form_data["isNewReport"]
-        report.is_new_chart = form_data["isNewChart"]
-
-        report.report_id = form_data["reportId"]
+        if not chart:
+            chart = HawkeyeChart(slice_id=slice_id)
+        print(form_data.get("reportId"))
+        if form_data.get("reportId") is None or form_data.get("reportId") == "":
+            report = HawkeyeReport()
+        else:
+            report = db.session.query(HawkeyeReport).filter_by(id=form_data["reportId"]).one_or_none()
+        
         report.report_name = form_data["reportName"]
         report.report_description = form_data["reportDescription"]
         report.report_summary = form_data["reportSummary"]
         report.report_type = form_data["reportType"]
         report.report_frequency = form_data["reportFrequency"]
-
-        report.chart_id = form_data["chartId"]
-        report.chart_name = form_data["chartName"]
-        report.chart_description = form_data["chartDescription"]
-        report.chart_summary = form_data["chartSummary"]
-        report.chart_granularity = form_data["chartGranularity"]
-        report.rolling_window = form_data["rollingWindow"]
-        report.chart_type = form_data["chartType"]
-        report.chart_mode = form_data["chartMode"]
-        report.x_axis_label = form_data["xAxisLabel"]
-        report.y_axis_label = form_data["yAxisLabel"]
-        report.label_mapping = form_data["labelMapping"]
-
-        report.report_format = form_data["reportFormat"]
-        report.dimensions = json.dumps(form_data["dimensions"])
-
-        report.slice_id = form_data['sliceId']
-        report.report_status = DRAFT
-
+        report.is_new_report = form_data["isNewReport"]
         if report.id:
             self.overwrite_record(report)
         else:
             self.save_record(report)
 
-        return json_success(json.dumps({"status": "SUCCESS", "report_status": report.report_status}))
+        chart.is_new_chart = form_data["isNewChart"]
+        chart.hawkeye_report_id = report.id
+        chart.chart_id = form_data["chartId"]
+        chart.chart_name = form_data["chartName"]
+        chart.chart_description = form_data["chartDescription"]
+        chart.chart_summary = form_data["chartSummary"]
+        chart.chart_granularity = form_data["chartGranularity"]
+        chart.rolling_window = form_data["rollingWindow"]
+        chart.chart_type = form_data["chartType"]
+        chart.chart_mode = form_data["chartMode"]
+        chart.x_axis_label = form_data["xAxisLabel"]
+        chart.y_axis_label = form_data["yAxisLabel"]
+        chart.label_mapping = form_data["labelMapping"]
+
+        chart.dimensions = json.dumps(form_data["dimensions"])
+
+        chart.slice_id = form_data['sliceId']
+        chart.chart_status = DRAFT
+
+        
+
+        if chart.id:
+            self.overwrite_record(chart)
+        else:
+            self.save_record(chart)
+
+        return json_success(json.dumps({"status": "SUCCESS", "report_status": chart.chart_status, "report_id": report.id}))
 
 
     @event_logger.log_this
@@ -289,19 +306,19 @@ class ReportAPI(BaseSupersetView):
                 status=401,
             )
 
-        report = db.session.query(Report).filter_by(slice_id=slice_id).one_or_none()
+        chart = db.session.query(HawkeyeChart).filter_by(slice_id=slice_id).one_or_none()
 
-        if not report:
+        if not chart:
             return json_error_response(
                 _("You don't have the rights to ") + _("alter this ") + _("report"),
                 status=400,
             )
 
-        report.report_status = REVIEW
+        chart.chart_status = REVIEW
 
-        self.overwrite_record(report)
+        self.overwrite_record(chart)
 
-        return json_success(json.dumps({"status": "SUCCESS", "report_status": report.report_status}))
+        return json_success(json.dumps({"status": "SUCCESS", "report_status": chart.chart_status}))
 
 
     @event_logger.log_this
@@ -310,9 +327,15 @@ class ReportAPI(BaseSupersetView):
         "/report_config/<slice_id>", methods=["GET"]
     )
     def report_config(self, slice_id=None):
-        report = db.session.query(Report).filter_by(slice_id=slice_id).one_or_none()
+        report = db.session.query(HawkeyeChart).filter_by(slice_id=slice_id).one_or_none()
 
-        return json_success(json.dumps({"data": report.data if report is not None else {}}))
+        report_cofig = report.data if report is not None else {}
+
+        report_cofig.update({
+            "portalHost": PORTAL_HOST
+        })
+
+        return json_success(json.dumps({"data": report_cofig}))
 
 
     @event_logger.log_this
@@ -321,35 +344,9 @@ class ReportAPI(BaseSupersetView):
         "/list_reports", methods=["GET"]
     )
     def list_reports(self, slice_id=None):
+        reports = db.session.query(HawkeyeReport).all()
         
-        # url = "{}/report/list".format(PORTAL_API_HOST)
-
-        # payload = {
-        #     "request": {
-        #         "filters": {
-        #         }
-        #     }
-        # }
-        # headers = {
-        #   'Content-Type': 'application/json'
-        # }
-
-        # response = http_client.request("POST", url, headers=headers, data = json.dumps(payload))
-        # reports = response.json()['result']['reports']
-
-        reports = [{"reportid":"ssd_ssd","title":"Hello","description":"<span> <b> Content Plays in UP </b>, <b> Total Devices in UP </b>  and <b> Devices comparison - New vs. Old </b> </span>","authorizedroles":["ORG_ADMIN"],"status":"draft","type":"public","reportaccessurl":"\"https://dev.sunbirded.org\"/dashBoard/reports/e97ccdb8-c4b5-4c07-85f9-8b53d6d4263e","createdon":"2020-04-14T11:38:50.369Z","updatedon":"2020-04-14T11:38:50.369Z","createdby":"ravinder kumar","reportconfig":{"id":"up_data","label":"Uttar Pradesh Last Week Data","table":{"valuesExpr":"tableData","columnsExpr":"keys"},"title":"Uttar Pradesh Last Week Data","charts":[{"chartid":"ssd_ssdd","title":"Total Plays V/s Goal of content Plays","description":"Description of Total Plays V/s Goal of content Plays","colors":[{"borderColor":"rgb(35, 28, 242)","backgroundColor":"rgba(35, 28, 242, 0.4)"},{"borderColor":"rgb(55, 70, 73)"}],"options":{"title":{"text":"Total Plays V/s Goal of content Plays","display":True,"fontSize":16},"scales":{"xAxes":[{"scaleLabel":{"display":True,"labelString":"Districts"}}],"yAxes":[{"scaleLabel":{"display":True,"labelString":"Total Plays, Goal of Content Plays"}}]},"tooltips":{"mode":"x-axis","intersect":False,"bodySpacing":5,"titleSpacing":5},"responsive":True},"summary":[{"text":["70% of states have not achieved their Goal of Content Plays for the Week","The % of states achieving their goals on a week-on-week basis is lesser than the % of states not achieving","State not on track to achieve overall Content Play goals for the month"],"label":"Observation"},{"text":["Offer better incentives for teachers to ensure usage of digital content in schools","Content coverage needs to be increased to get more content plays","Content quality needs to be examined to see if this is a factor"],"label":"Actions"}],"datasets":[{"label":"Total Plays","dataExpr":"Total Plays"},{"type":"line","label":"Goal of content plays","dataExpr":"Goal of content plays","lineThickness":1}],"chartType":"bar","bigNumbers":[{"footer":"Total Plays","header":"Total Plays of all districts","dataExpr":"Total Plays"},{"footer":"Goal of content plays","header":"Goal of content plays for all districts","dataExpr":"Goal of content plays"}],"labelsExpr":"District"},{"chartid":"85f9db8-c4b5-4c07-85f9-c4b5562385f9","title":"Overall Users (Goal vs. Actual)","description":"Description of Overall Users (Goal vs. Actual)","colors":[{"borderColor":"rgb(35, 28, 242)","backgroundColor":"rgba(35, 28, 242, 0.4)"},{"borderColor":"rgb(55, 70, 73)"}],"filters":[{"reference":"District","controlType":"multi-select","displayName":"Select District"}],"options":{"title":{"text":"Overall Users (Goal vs. Actual)","display":True,"fontSize":16},"scales":{"xAxes":[{"scaleLabel":{"display":True,"labelString":"Districts"}}],"yAxes":[{"scaleLabel":{"display":True,"labelString":"Overall Users (Goal vs. Actual)"}}]},"tooltips":{"mode":"x-axis","intersect":False,"bodySpacing":5,"titleSpacing":5},"responsive":True},"summary":[{"text":["There are not enough devices being used across the State - achievement of monthly target at risk","Despite 25000 devices being provided across districts in the last month, only 11000 devices have registered usage over the last week."],"label":"Observation"},{"text":["Identify if enough devices are available to teachers, or if devices are being locked up and not charged/ used","Penalise non usage of devices despite these being available at schools"],"label":"Actions"}],"datasets":[{"label":"Total Users","dataExpr":"Total Devices"},{"type":"line","label":"Goal of Devices","dataExpr":"Goal of Devices","lineThickness":1}],"chartType":"bar","labelsExpr":"District"}],"dataSource":"/reports/fetch/sunbird/up_report.json","description":"<span> <b> Content Plays in UP </b>, <b> Total Devices in UP </b>  and <b> Devices comparison - New vs. Old </b> </span>","downloadUrl":"/reports/fetch/sunbird/up_report.csv"},"templateurl":None,"slug":"sunbird","reportgenerateddate":"2020-04-12T00:00:00.000Z","reportduration":{"enddate":"Sun Apr 12 2020","startdate":"Sun Apr 12 2020"},"tags":["usage","plays"],"updatefrequency":"DAILY"}]
-
-        def report_data_func(x):
-            return {
-                'reportid': x['reportid'],
-                'report_name': x['title'],
-                'report_description': x['description'],
-                'report_summary': x['reportconfig'].get('summary', ""),
-                'charts': x['reportconfig']['charts']
-            }
-
-        reports = map(report_data_func, reports)
-        reports = [item for item in reports]
+        reports = [item.data for item in reports]
 
         return json_success(json.dumps({"data": reports}))
 
@@ -373,9 +370,9 @@ class ReportAPI(BaseSupersetView):
                 status=400,
             )
 
-        report = db.session.query(Report).filter_by(slice_id=slice_id).one_or_none()
+        chart = db.session.query(HawkeyeChart).filter_by(slice_id=slice_id).one_or_none()
 
-        if not report or (report.report_status != REVIEW and report.report_status != APPROVED):
+        if not chart or (chart.chart_status != REVIEW and chart.chart_status != APPROVED):
             return json_error_response(
                 _("Report is not submitted for review yet"),
                 status=400,
@@ -399,94 +396,350 @@ class ReportAPI(BaseSupersetView):
             logger.exception(e)
             return json_error_response(e)
 
-        report.report_status = PUBLISHED if report.report_status == APPROVED else APPROVED
-        report.druid_query = query
+        chart.chart_status = PUBLISHED if chart.chart_status == APPROVED else APPROVED
+        chart.druid_query = json.loads(query)
 
-        # self.publish_report_portal(report.data)
+        if chart.chart_status == PUBLISHED:
+            report_id = self.publish_report_portal(chart)
+            self.publish_job_analytics(chart)
 
-        self.overwrite_record(report)
+            chart.hawkeye_report.published_report_id = report_id
+            self.overwrite_record(chart.hawkeye_report)
 
-        return json_success(json.dumps({"status": "SUCCESS", "report_status": report.report_status}))
+        chart.submitted_as_job = True
+
+        self.overwrite_record(chart)
+
+        return json_success(json.dumps({
+            "status": "SUCCESS",
+            "report_status": chart.chart_status,
+            "report_id": chart.hawkeye_report.published_report_id
+        }))
 
 
-    def publish_report_portal(self, report):
-        report_config = self.generate_config(report_data)
+    def publish_job_analytics(self, chart):
+        job_config = self.get_job_config(chart.chart_id)
         
-        report_config
+        if job_config is None:
+            job_config = self.job_config_template(chart)
+        else:
+            y_axis_label = chart.label_mapping.get(chart.y_axis_label)
+            y_axis_label = y_axis_label if y_axis_label is not None else chart.y_axis_label
+
+            druid_query = chart.druid_query
+            druid_query.pop("intervals")
+
+            metric = {
+                'metric': chart.y_axis_label,
+                'label': chart.label_mapping[chart.y_axis_label],
+                'druidQuery': druid_query
+            }
+
+            job_config['config']['reportConfig']['metrics'].append(metric)
+
+            job_config['config']['reportConfig']['labels'] = chart.label_mapping
+
+            job_config['description'] = chart.hawkeye_report.report_description
+            job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
+            job_config['config']['reportConfig']['dateRange'] = {
+                'staticInterval': chart.rolling_window,
+                'granularity': chart.chart_granularity
+            }
+            job_config['createdBy'] = 'User1'
+
+        self.post_job_config(job_config, chart)
 
 
-    def generate_config(self, report_data, report_name):
+    def publish_report_portal(self, chart):
+        published_report_id = chart.hawkeye_report.published_report_id
+        if published_report_id is None or published_report_id is "":
+            report_config = self.report_config_template(chart)
+        else:
+            report_config = self.get_report_config(published_report_id)
+            try:
+                report_config.pop("templateurl")
+                report_config.pop("reportid")
+                report_config.pop("reportaccessurl")
+            except Exception as e:
+                pass
+
+        if chart.is_new_chart:
+            chart_config = self.report_chart_template(chart)
+
+            report_config['reportconfig']['charts'].append(chart_config)
+        else:
+            charts = filter(lambda x: x['chartid'] == chart.chart_id, report_config['reportconfig']['charts'])
+            chart_config = charts[0]
+
+            y_axis_label = chart.label_mapping.get(chart.y_axis_label)
+            y_axis_label = y_axis_label if y_axis_label is not None else chart.y_axis_label
+
+            chart_config['datasets'] = chart_config['datasets'].append({
+                "dataExpr": y_axis_label,
+                "label": y_axis_label
+            })
+
+            for x in report_config['reportconfig']['charts']:
+                if x['chartid'] == chart.chart_id:
+                    x = chart_config
+
+        report_id = self.post_report_config(report_config, published_report_id)
+
+        return report_id
+
+
+    def get_job_config(self, chart_id):
+        url = "{}/report/jobs/{}".format(ANALYTICS_API_HOST, chart_id)
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer {}'.format(ANALYTICS_API_KEY)
+        }
+
+        response = http_client.request("GET", url, headers=headers, data = {})
+
+        return response.json().get('result')
+
+
+    def post_job_config(self, job_config, chart):
+        if chart.is_new_chart:
+            url = "{}/report/jobs/submit".format(ANALYTICS_API_HOST)
+            method = "POST"
+        else:
+            url = "{}/report/jobs/{}".format(ANALYTICS_API_HOST, chart.chart_id)
+            method = "POST"
+
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer {}'.format(ANALYTICS_API_KEY)
+        }
+
+        job_config = {
+            "request": job_config
+        }
+
+        response = http_client.request(method, url, headers=headers, data=json.dumps(job_config))
+
+        print(response.json())
+
+
+    def job_config_template(self, chart):
+        dimensions = map(lambda x: x['value'], chart.dimensions)
+        dimensions = [item for item in dimensions]
+
+        report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
+                            chart.hawkeye_report.report_frequency
+
+        druid_query = chart.druid_query
+        druid_query.pop("intervals")
+
+        merge_config = {
+          "basePath": "/mount/data/analytics/tmp",
+          "reportPath": "hawk-eye/{}.csv".format(chart.chart_id),
+          "container": "reports",
+          "rollup": False
+        }
+
+        rollupAges = {
+            "AcademicYear": "ACADEMIC_YEAR",
+            "YTD": "GEN_YEAR",
+            "LastMonth": "MONTH",
+            "Last30Days": "MONTH",
+            "LastWeek": "WEEK",
+            "Last7Days": "WEEK",
+            "LastDay": "DAY"
+        }
+
+
+        if chart.chart_mode == 'add':
+            merge_config.update({
+              "rollupRange": 1,
+              "rollupAge": rollupAges[chart.rolling_window],
+              "rollupCol": chart.label_mapping[chart.x_axis_label],
+              "frequency": report_frequency,
+              "container": "reports",
+              "rollup": True
+            })
+
         config_template = {
-            "id": report_data['report_id'],
-            "label": report_data['report_name'],
-            "title": report_data['report_name'],
-            "description": report_data['report_description'],
-            "dataSource": "/reports/tn/{}.json".format(report_name),
-            "charts": [
-                {
-                    "datasets": [
+            'reportId': chart.chart_id, # Unique id of the report
+            'createdBy': 'User1', # ID of the user who requested the report
+            'description': chart.chart_description, # Short Description about the report
+            'reportSchedule': report_frequency, # Type of report (ONCE/DAILY/WEEKLY/MONTHLY)
+            'config': {  # Config of the report
+                'reportConfig': {
+                    'id': chart.chart_id, # Unique id of the report
+                    'queryType': druid_query.get('queryType'), # Query type of the report - groupBy, topN
+                    'dateRange': {
+                        'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear
+                        'granularity': chart.chart_granularity # Granularity of the report - DAY, WEEK, MONTH, ALL
+                    },
+                    "mergeConfig": merge_config,
+                    'metrics': [
                         {
-                            "dataExpr": report_data['y_axis_label'],
-                            "label": report_data['y_axis_label']
+                            'metric': chart.y_axis_label, # Unique metric ID
+                            'label': chart.label_mapping[chart.y_axis_label], # Metric Label
+                            'druidQuery': druid_query # Actual druid query
                         }
                     ],
-                    "colors": [
+                    'labels': chart.label_mapping,
+                    'output': [
                         {
-                            "borderColor": "rgb(0, 199, 134)",
-                            "backgroundColor": "rgba(0, 199, 134, 0.5)"
-                        },
-                        {
-                            "borderColor": "rgb(255, 161, 29)",
-                            "backgroundColor": "rgba(255, 161, 29, 0.5)"
-                        },
-                        {
-                            "borderColor": "rgb(255, 69, 88)",
-                            "backgroundColor": "rgba(255, 69, 88, 0.5)"
+                            'type': 'csv', # Output type - csv, json
+                            'metrics': [chart.y_axis_label], # Metrics to be output. Defaults to *
+                            'dims': dimensions, # Dimensions to be used to split the data into smaller files
+                            'fileParameters': ['id', 'dims'] # Dimensions to be used in the file name. Defaults to [report_id, date]
                         }
-                    ],
-                    "labelsExpr": report_data['x_axis_label'],
-                    "chartType": report_data['report_type'],
-                    "options": {
-                        "scales": {
-                            "yAxes": [
-                                {
-                                    "scaleLabel": {
-                                        "display": True,
-                                        "labelString": report_data['y_axis_label']
-                                    }
-                                }
-                            ],
-                            "xAxes": [
-                                {
-                                    "scaleLabel": {
-                                        "display": True,
-                                        "labelString": report_data['x_axis_label']
-                                    }
-                                }
-                            ]
-                        },
-                        "tooltips": {
-                            "intersect": False,
-                            "mode": "x-axis",
-                            "titleSpacing": 5,
-                            "bodySpacing": 5
-                        },
-                        "title": {
-                            "fontSize": 16,
-                            "display": True,
-                            "text": report_data['chart_name']
-                        },
-                        "legend": {
-                            "display": False
-                        },
-                        "responsive": True,
-                        "showLastUpdatedOn": True
+                    ]
+                },
+                'store': 'azure', # Output store location. One of local, azure, s3
+                'container': 'reports', # Output container.
+                'key': 'druid-reports/' # File prefix if any
+            },
+        }
+
+        return config_template
+
+
+    def get_report_config(self, published_report_id):
+        url = "{}/report/get/{}".format(PORTAL_API_HOST, published_report_id)
+
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer {}'.format(PORTAL_API_KEY)
+        }
+
+        response = http_client.request("GET", url, headers=headers, data = {})
+
+        if response.json()['result'].get("reports") is not None:
+            return response.json()['result']["reports"][0]
+        else:
+            return None 
+
+
+    def post_report_config(self, report_config, published_report_id=None):
+        if published_report_id is None or published_report_id == '':
+            url = "{}/report/create".format(PORTAL_API_HOST)
+            method = "POST"
+        else:
+            url = "{}/report/update/{}".format(PORTAL_API_HOST, published_report_id)
+            method = "PATCH"
+
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer {}'.format(PORTAL_API_KEY)
+        }
+
+        report_config = {
+            "request": {
+                "report": report_config
+            }
+        }
+
+        response = http_client.request(method, url, headers=headers, data=json.dumps(report_config))
+
+        print(response.json())
+
+        report_id = response.json()['result']['reportId']
+        
+        return report_id
+
+
+    def report_config_template(self, chart):
+        template = {
+            "title": chart.hawkeye_report.report_name,
+            "description": chart.hawkeye_report.report_description,
+            "authorizedroles": [
+                "ORG_ADMIN",
+                "REPORT_VIEWER"
+            ],
+            "tags": ["1Bn"],
+            "updatefrequency": chart.hawkeye_report.report_frequency,
+            "createdby": "kumar",
+            "type": "public",
+            "slug": "hawk-eye",
+            "reportduration": {
+                "startdate": "12-02-2020",
+                "enddate": "12-02-2020"
+            },
+            "reportgenerateddate": "12-02-2020",
+            "reportconfig": {
+                "label": chart.hawkeye_report.report_name,
+                "title": chart.hawkeye_report.report_name,
+                "description": chart.hawkeye_report.report_description,
+                "dataSource": [
+                    {
+                        "id": chart.chart_id,
+                        "path": "/reports/hawk-eye/{}.json".format(chart.chart_id)
                     }
+                ]
+                
+            }
+        }
+
+        return template
+
+
+    def report_chart_template(self, chart):
+        x_axis_label = chart.label_mapping.get(chart.x_axis_label)
+        x_axis_label = x_axis_label if x_axis_label is not None else chart.x_axis_label
+
+        y_axis_label = chart.label_mapping.get(chart.y_axis_label)
+        y_axis_label = y_axis_label if y_axis_label is not None else chart.y_axis_label
+
+        report_chart = {
+            "datasets": [
+                {
+                    "dataExpr": y_axis_label,
+                    "label": y_axis_label
                 }
             ],
-            "table": []
+            "labelsExpr": x_axis_label,
+            "chartType": chart.chart_type,
+            "options": {
+                "scales": {
+                    "yAxes": [
+                        {
+                            "scaleLabel": {
+                                "display": True,
+                                "labelString": y_axis_label
+                            }
+                        }
+                    ],
+                    "xAxes": [
+                        {
+                            "scaleLabel": {
+                                "display": True,
+                                "labelString": x_axis_label
+                            }
+                        }
+                    ]
+                },
+                "tooltips": {
+                    "intersect": False,
+                    "mode": "x-axis",
+                    "titleSpacing": 5,
+                    "bodySpacing": 5
+                },
+                "title": {
+                    "fontSize": 16,
+                    "display": True,
+                    "text": chart.chart_name
+                },
+                "legend": {
+                    "display": False
+                },
+                "responsive": True,
+                "showLastUpdatedOn": True
+            },
+            "dataSource": {
+                "ids": [
+                    chart.chart_id
+                ],
+                "commonDimension": x_axis_label
+            }
         }
-        return config_template
+
+        return report_chart
 
 
     def save_or_overwrite_slice(
@@ -515,7 +768,6 @@ class ReportAPI(BaseSupersetView):
         )
 
         slc.params = json.dumps(form_data, indent=2, sort_keys=True)
-        slc.is_report = True
         slc.datasource_name = datasource_name
         slc.viz_type = form_data["viz_type"]
         slc.datasource_type = datasource_type

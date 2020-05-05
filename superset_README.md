@@ -146,10 +146,20 @@ Don't do
 Algo:
 1. Submit for review Superset
 2. Publish as draft
-3. Generate Druid Query from superset and store it db
-4.1. By Report service API, create Report config or update report config if it is getting added to report. And update the status back in db.
-4.2. After report service API call, create Report config in Analytics API. And update the status back in db.
+3. Generate Druid Query from superset and store in db
+4. Generate Report config for portal and store in db
+4.1. If it is a new report
+    -> Create new report
+    -> Create new chart
+4.1. If existing report
+    Update existing report by report id
+        -> If existing chart, Update existing chart by chart id
+        -> If new chart, Create new chart
 
+5.1. By Report service API, create Report config or update report config if it is getting added to report. And update the status back in db.
+5.2. After report service API call, create Report config in Analytics API. And update the status back in db.
+
+5. store the report url in db from the report service API
 
 
 HE-15
