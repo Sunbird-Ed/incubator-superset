@@ -552,7 +552,7 @@ class ReportAPI(BaseSupersetView):
           "basePath": "/mount/data/analytics/tmp",
           "reportPath": "{}.csv".format(chart.chart_id),
           "container": "reports",
-          "rollup": False
+          "rollup": 0
         }
 
         rollup_ages = {
@@ -566,15 +566,15 @@ class ReportAPI(BaseSupersetView):
         }
 
 
-        if chart.chart_mode == 'add':
-            merge_config.update({
-              "rollupRange": 1,
-              "rollupAge": rollup_ages[chart.rolling_window],
-              "rollupCol": chart.label_mapping[chart.x_axis_label],
-              "frequency": report_frequency,
-              "container": "reports",
-              "rollup": True
-            })
+        # if chart.chart_mode == 'add':
+        #     merge_config.update({
+        #       "rollupRange": 1,
+        #       "rollupAge": rollup_ages[chart.rolling_window],
+        #       "rollupCol": chart.label_mapping[chart.x_axis_label],
+        #       "frequency": report_frequency,
+        #       "container": "reports",
+        #       "rollup": True
+        #     })
 
         config_template = {
             'reportId': chart.chart_id, # Unique id of the report
@@ -589,7 +589,7 @@ class ReportAPI(BaseSupersetView):
                         'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear
                         'granularity': chart.chart_granularity # Granularity of the report - DAY, WEEK, MONTH, ALL
                     },
-                    "mergeConfig": merge_config,
+                    'mergeConfig': merge_config,
                     'metrics': [
                         {
                             'metric': chart.y_axis_label, # Unique metric ID
