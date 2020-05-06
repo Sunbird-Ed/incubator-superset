@@ -120,6 +120,9 @@ export default class PublishChartButton extends React.Component {
       if(name == "isNewReport") {
         // this.generateId(reportName, "report", true)
         additionalChanges.isNewChart = true
+        this.changeAssociates("report", null)
+      } else {
+        this.changeAssociates("chart", null)
       }
 
       this.generateId(chartName, "chart", true)
@@ -137,6 +140,51 @@ export default class PublishChartButton extends React.Component {
     });
   }
 
+  changeAssociates = (fieldType, value=null) => {
+    let additionalChanges = {}
+
+    if (fieldType == "report" && !!value) {
+      let report = this.state.reportList.find(x => x.reportId == value)
+      additionalChanges.reportName = report.reportName
+      additionalChanges.reportDescription = report.reportDescription
+      additionalChanges.reportType = report.reportType
+      additionalChanges.reportFrequency = report.reportFrequency
+    } else if (fieldType == "report") {
+      additionalChanges.reportName = ""
+      additionalChanges.reportDescription = ""
+      additionalChanges.reportType = ""
+      additionalChanges.reportFrequency = ""
+    } else if (fieldType == "chart" && !!value) {
+      let chart = this.state.chartList.find(x => x.chartId == value)
+
+      additionalChanges.chartName = chart.chartName
+      additionalChanges.chartDescription = chart.chartDescription
+      additionalChanges.chartType = chart.chartType
+      additionalChanges.chartGranularity = chart.chartGranularity
+      additionalChanges.rollingWindow = chart.rollingWindow
+      additionalChanges.chartMode = chart.chartMode
+      additionalChanges.xAxisLabel = chart.xAxisLabel
+      // additionalChanges.yAxisLabel = chart.yAxisLabel
+      additionalChanges.labelMapping = chart.labelMapping
+      // additionalChanges.dimensions = chart.dimensions
+    } else if (fieldType == "chart") {
+      additionalChanges.chartName = ""
+      additionalChanges.chartDescription = ""
+      additionalChanges.chartType = ""
+      additionalChanges.chartGranularity = ""
+      additionalChanges.rollingWindow = ""
+      additionalChanges.chartMode = ""
+      additionalChanges.xAxisLabel = ""
+      additionalChanges.yAxisLabel = ""
+      additionalChanges.labelMapping = ""
+      // additionalChanges.dimensions = []
+    }
+
+    this.setState({
+      ...additionalChanges
+    })
+  }
+
   UNSAFE_componentWillReceiveProps(nextProps) {
     this.setState({
       ...nextProps.reportData
@@ -149,7 +197,7 @@ export default class PublishChartButton extends React.Component {
       let stateVar = `${type}Id`
 
       let isAvailable = this.state[`${type}List`].find((value) => {
-        return value[`${type}id`] == newId
+        return value[stateVar] == newId
       })
 
       newId = !!isAvailable ? newId + "1" : newId
@@ -208,7 +256,7 @@ export default class PublishChartButton extends React.Component {
       "reportId","reportName","reportDescription","reportType",
       "reportFrequency","chartId","chartName","chartDescription",
       "chartGranularity","rollingWindow","chartType","chartMode","xAxisLabel",
-      "yAxisLabel","labelMapping","dimensions"
+      "yAxisLabel","labelMapping"
     ]
 
     if (this.state.reportType == 'one-time') {
@@ -251,7 +299,6 @@ export default class PublishChartButton extends React.Component {
       xAxisLabel: this.state.xAxisLabel,
       yAxisLabel: this.state.yAxisLabel,
       labelMapping: this.state.labelMapping,
-      // reportFormat: this.state.reportFormat,
       dimensions: this.state.dimensions,
       sliceId: slice.slice_id
     };
@@ -305,7 +352,8 @@ export default class PublishChartButton extends React.Component {
           handleRadio: this.handleRadio,
           handleInputChange: this.handleInputChange,
           updateChart: this.updateChart,
-          generateId: this.generateId
+          generateId: this.generateId,
+          changeAssociates: this.changeAssociates
         }}
         role={role}
       />

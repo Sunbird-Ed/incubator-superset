@@ -178,3 +178,12 @@ HE-15
 -    X and Y axis fields needs to be provided as input. The input should be a single select from the query dimensions and metrics
 
 -    Dimensions should be on one axis and metrics on another. We cannot have the same on both
+
+
+6 - May - 2020
+
+    script for taking the file from prod blbo to dev blob
+
+    hide output report config
+
+    date as default dimension

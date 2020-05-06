@@ -57,7 +57,7 @@ export default function PublishStatusBody ({
               )}
               { reportStatus == 'live' && (
                 <Alert bsStyle="success">
-                  The report is successfully updated in portal as <strong>Live</strong>. Click on this link(
+                  The report is successfully updated in portal as <strong>Draft</strong>. Click on this link(
                     <a target="_blank" href={`${portalHost}/dashBoard/reports/${publishedReportId}`}>
                       <u>{`${portalHost}/dashBoard/reports/${publishedReportId}`}</u>
                     </a>

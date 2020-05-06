@@ -272,7 +272,7 @@ class ReportAPI(BaseSupersetView):
         chart.y_axis_label = form_data["yAxisLabel"]
         chart.label_mapping = form_data["labelMapping"]
 
-        chart.dimensions = json.dumps(form_data["dimensions"])
+        # chart.dimensions = json.dumps(form_data["dimensions"])
 
         chart.slice_id = form_data['sliceId']
         chart.chart_status = DRAFT
@@ -396,16 +396,17 @@ class ReportAPI(BaseSupersetView):
             logger.exception(e)
             return json_error_response(e)
 
-        chart.chart_status = PUBLISHED if chart.chart_status == APPROVED else APPROVED
-        chart.druid_query = json.loads(query)
+        # chart.chart_status = PUBLISHED if chart.chart_status == APPROVED else APPROVED
+        chart.chart_status = PUBLISHED
+        chart.druid_query = json.loads(query) if isinstance(query, str) else query
+
+        report_id = None
 
         if chart.chart_status == PUBLISHED:
             report_id = self.publish_report_portal(chart)
             self.publish_job_analytics(chart)
 
-            chart.hawkeye_report.published_report_id = report_id
-            self.overwrite_record(chart.hawkeye_report)
-
+        chart.hawkeye_report.published_report_id = report_id
         chart.submitted_as_job = True
 
         self.overwrite_record(chart)
@@ -438,6 +439,8 @@ class ReportAPI(BaseSupersetView):
             job_config['config']['reportConfig']['metrics'].append(metric)
 
             job_config['config']['reportConfig']['labels'] = chart.label_mapping
+
+            job_config['config']['reportConfig']['output'][0]['metrics'].append(chart.y_axis_label)
 
             job_config['description'] = chart.hawkeye_report.report_description
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
@@ -523,8 +526,8 @@ class ReportAPI(BaseSupersetView):
 
 
     def job_config_template(self, chart):
-        dimensions = map(lambda x: x['value'], chart.dimensions)
-        dimensions = [item for item in dimensions]
+        # dimensions = map(lambda x: x['value'], chart.dimensions)
+        # dimensions = [chart.label_mapping[item] for item in dimensions]
 
         report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
                             chart.hawkeye_report.report_frequency
@@ -532,14 +535,27 @@ class ReportAPI(BaseSupersetView):
         druid_query = chart.druid_query
         druid_query.pop("intervals")
 
+        if druid_query.get("dimension"):
+            query_dims = druid_query.pop("dimension")
+            druid_query['dimensions'] = [{
+                "fieldName": query_dims,
+                "aliasName": chart.label_mapping[query_dims]
+            }]
+        elif druid_query.get("dimensions"):
+            query_dims = druid_query.pop("dimensions")
+            druid_query['dimensions'] = [{
+                "fieldName": item,
+                "aliasName": chart.label_mapping[item]
+            } for item in query_dims]
+
         merge_config = {
           "basePath": "/mount/data/analytics/tmp",
-          "reportPath": "hawk-eye/{}.csv".format(chart.chart_id),
+          "reportPath": "{}.csv".format(chart.chart_id),
           "container": "reports",
           "rollup": False
         }
 
-        rollupAges = {
+        rollup_ages = {
             "AcademicYear": "ACADEMIC_YEAR",
             "YTD": "GEN_YEAR",
             "LastMonth": "MONTH",
@@ -553,7 +569,7 @@ class ReportAPI(BaseSupersetView):
         if chart.chart_mode == 'add':
             merge_config.update({
               "rollupRange": 1,
-              "rollupAge": rollupAges[chart.rolling_window],
+              "rollupAge": rollup_ages[chart.rolling_window],
               "rollupCol": chart.label_mapping[chart.x_axis_label],
               "frequency": report_frequency,
               "container": "reports",
@@ -565,7 +581,7 @@ class ReportAPI(BaseSupersetView):
             'createdBy': 'User1', # ID of the user who requested the report
             'description': chart.chart_description, # Short Description about the report
             'reportSchedule': report_frequency, # Type of report (ONCE/DAILY/WEEKLY/MONTHLY)
-            'config': {  # Config of the report
+            'config': { # Config of the report
                 'reportConfig': {
                     'id': chart.chart_id, # Unique id of the report
                     'queryType': druid_query.get('queryType'), # Query type of the report - groupBy, topN
@@ -586,7 +602,7 @@ class ReportAPI(BaseSupersetView):
                         {
                             'type': 'csv', # Output type - csv, json
                             'metrics': [chart.y_axis_label], # Metrics to be output. Defaults to *
-                            'dims': dimensions, # Dimensions to be used to split the data into smaller files
+                            'dims': ['date'], # Dimensions to be used to split the data into smaller files
                             'fileParameters': ['id', 'dims'] # Dimensions to be used in the file name. Defaults to [report_id, date]
                         }
                     ]
@@ -645,6 +661,7 @@ class ReportAPI(BaseSupersetView):
 
 
     def report_config_template(self, chart):
+        report_frequency = chart.hawkeye_report.report_frequency if chart.hawkeye_report.report_type == "scheduled" else chart.hawkeye_report.report_type
         template = {
             "title": chart.hawkeye_report.report_name,
             "description": chart.hawkeye_report.report_description,
@@ -653,7 +670,7 @@ class ReportAPI(BaseSupersetView):
                 "REPORT_VIEWER"
             ],
             "tags": ["1Bn"],
-            "updatefrequency": chart.hawkeye_report.report_frequency,
+            "updatefrequency": report_frequency,
             "createdby": "kumar",
             "type": "public",
             "slug": "hawk-eye",
@@ -671,8 +688,8 @@ class ReportAPI(BaseSupersetView):
                         "id": chart.chart_id,
                         "path": "/reports/hawk-eye/{}.json".format(chart.chart_id)
                     }
-                ]
-                
+                ],
+                "charts": []
             }
         }
 

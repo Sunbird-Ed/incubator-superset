@@ -4,7 +4,7 @@ import os
 from flask_appbuilder import Model
 from typing import Any, Dict
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text, Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text, Boolean, JSON
 from sqlalchemy.orm import backref, relationship
 from superset.models.helpers import AuditMixinNullable, ImportMixin
 from superset.models.hawkeye_report import HawkeyeReport
@@ -33,7 +33,7 @@ class HawkeyeChart(
     y_axis_label = Column(String(250))
     label_mapping = Column(Text)
     dimensions = Column(String(250))
-    druid_query = Column(Text)
+    druid_query = Column(JSON)
     submitted_as_job = Column(Boolean)
 
     chart_status = Column(String(100))

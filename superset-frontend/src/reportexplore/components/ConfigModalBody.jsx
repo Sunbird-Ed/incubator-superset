@@ -121,6 +121,7 @@ export default function ConfigModalBody ({
                     if (!isNewChart) {
                       methods.handleInputChange({currentTarget: {value: "", name: "chartId"}})
                     }
+                    methods.changeAssociates("report", event.currentTarget.value)
                   }}
                   disabled={fieldDisabled}
                   value={reportId}
@@ -262,7 +263,10 @@ export default function ConfigModalBody ({
                   title={t('Charts')}
                   fieldName="chartId"
                   validation={validations["chartId"]}
-                  onChange={methods.handleInputChange}
+                  onChange={(event) => {
+                    methods.handleInputChange(event);
+                    methods.changeAssociates("chart", event.currentTarget.value)
+                  }}
                   disabled={fieldDisabled}
                   value={chartId}
                 >
@@ -437,25 +441,10 @@ export default function ConfigModalBody ({
         </Panel.Body>
       </Panel>
 
-      <Panel>
+      {/*<Panel>
         <Panel.Heading><strong>Chart Output Config</strong></Panel.Heading>
         <Panel.Body>
           <Row>
-            {/*<Col md={6}>
-              <ConfigInputControl
-                inputType="select"
-                title={t('Report Format')}
-                fieldName="reportFormat"
-                validation={validations["reportFormat"]}
-                onChange={methods.handleInputChange}
-                disabled={fieldDisabled}
-                value={reportFormat}
-              >
-                <option value="">Select Report Format</option>
-                <option value="csv">CSV</option>
-                <option value="json">JSON</option>
-              </ConfigInputControl>
-            </Col>*/}
             <Col md={6}>
               <FormGroup>
                 <label className="control-label" htmlFor="dimensions">
@@ -477,7 +466,7 @@ export default function ConfigModalBody ({
             </Col>
           </Row>
         </Panel.Body>
-      </Panel>
+      </Panel>*/}
 
       {role == 'creator' && (reportStatus == 'draft' || !reportStatus) && (
         <Button
