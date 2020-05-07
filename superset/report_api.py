@@ -530,6 +530,16 @@ class ReportAPI(BaseSupersetView):
         # dimensions = map(lambda x: x['value'], chart.dimensions)
         # dimensions = [chart.label_mapping[item] for item in dimensions]
 
+        def change_filter(filters):
+            for i, fil in enumerate(filters):
+                if fil.get('type') == "selector":
+                    filters[i]['type'] = "equals"
+
+                if fil.get('fields') is not None:
+                    filters[i]['fields'] = change_filter(fil.get('fields'))
+            return filters
+
+
         report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
                             chart.hawkeye_report.report_frequency
 
@@ -556,6 +566,8 @@ class ReportAPI(BaseSupersetView):
                 druid_query['filters'] = druid_query['filters']['fields']
             else:
                 druid_query['filters'] = [druid_query['filters']]
+
+        druid_query['filters'] = change_filter(druid_query['filters'])
 
         if druid_query.get("aggregations"):
             for i, aggregation in enumerate(druid_query['aggregations']):
