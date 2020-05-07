@@ -476,7 +476,7 @@ class ReportAPI(BaseSupersetView):
 
             y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
-            chart_config['datasets'] = chart_config['datasets'].append({
+            chart_config['datasets'].append({
                 "dataExpr": y_axis_label,
                 "label": y_axis_label
             })
