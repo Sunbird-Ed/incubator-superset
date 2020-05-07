@@ -96,7 +96,7 @@ export default function PublishStatusBody ({
           <Row>
             Are you sure you want to
             {
-              reportStatus == 'review' ? " approve?" : " publish?"
+              reportStatus == 'review' ? " publish to portal?" : " publish?"
             }
             <br/>
             <br/>
@@ -109,7 +109,7 @@ export default function PublishStatusBody ({
                 className="m-r-5"
                 disabled={submitting}
               >
-                {reportStatus=='review' && (!submitting ? t('Approve'):t('Approving'))}
+                {reportStatus=='review' && (!submitting ? t('Publish'):t('Publishing'))}
                 {reportStatus=='approved' && (!submitting ? t('Publish'):t('Publishing'))}
               </Button>
             </div>

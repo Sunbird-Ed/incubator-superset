@@ -543,7 +543,7 @@ class ReportAPI(BaseSupersetView):
                 result_filter = result_filter + fil
             return result_filter
 
-        # druid_query['queryType'] = "groupBy"
+        druid_query['queryType'] = "groupBy"
         druid_query.pop("intervals")
 
         if druid_query.get("dimension"):

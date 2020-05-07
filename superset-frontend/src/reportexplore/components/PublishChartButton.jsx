@@ -391,8 +391,8 @@ export default class PublishChartButton extends React.Component {
         <ModalTrigger
           isButton
           animation={this.props.animation}
-          triggerNode={role == 'creator' ? t('Submit for review') : t('Publish')}
-          modalTitle={role == 'creator' ? t('Submit for review'): t('Publish chart to portal dashboard')}
+          triggerNode={role == 'creator' ? t('Submit') : t('Publish')}
+          modalTitle={role == 'creator' ? t('Submit'): t('Publish Report/Chart as Draft')}
           bsSize="large"
           modalBody={this.renderConfirmationBody()}
         />
