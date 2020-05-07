@@ -165,7 +165,7 @@ class ExploreViewContainer extends React.Component {
       if(typeof(metr) == "object") {
         value = { label: metr.label, value: metr.label }
       } else {
-        value = { label: metr, value: metr }
+        value = { label: "total_count", value: "total_count" }
       }
       return value
     })

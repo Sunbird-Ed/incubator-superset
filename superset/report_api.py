@@ -548,6 +548,19 @@ class ReportAPI(BaseSupersetView):
                 "aliasName": chart.label_mapping[item]
             } for item in query_dims]
 
+        if druid_query.get("metric"):
+            druid_query.pop("metric")
+
+        if druid_query.get("aggregations"):
+            for i, aggregation in enumerate(druid_query['aggregations']):
+                if aggregation['name'] == "count":
+                    druid_query['aggregations'][i] = {
+                        "name": "total_count",
+                        "type": "longSum",
+                        "fieldName": "total_count"
+                    }
+
+
         merge_config = {
           "basePath": "/mount/data/analytics/tmp",
           "reportPath": "{}.csv".format(chart.chart_id),
