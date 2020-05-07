@@ -481,7 +481,7 @@ class ReportAPI(BaseSupersetView):
                 "label": y_axis_label
             })
 
-            for i, x in report_config['reportconfig']['charts']:
+            for i, x in enumerate(report_config['reportconfig']['charts']):
                 if x['chartId'] == chart.chart_id:
                     report_config['reportconfig']['charts'][i] = chart_config
 
