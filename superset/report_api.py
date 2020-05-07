@@ -440,7 +440,8 @@ class ReportAPI(BaseSupersetView):
 
             job_config['config']['reportConfig']['labels'] = chart.label_mapping
 
-            job_config['config']['reportConfig']['output'][0]['metrics'].append(chart.y_axis_label)
+            if chart.y_axis_label not in job_config['config']['reportConfig']['output'][0]['metrics']:
+                job_config['config']['reportConfig']['output'][0]['metrics'].append(chart.y_axis_label)
 
             job_config['description'] = chart.hawkeye_report.report_description
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
@@ -532,6 +533,7 @@ class ReportAPI(BaseSupersetView):
         report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
                             chart.hawkeye_report.report_frequency
 
+        druid_query['queryType'] = "groupBy"
         druid_query = chart.druid_query
         druid_query.pop("intervals")
 
@@ -548,8 +550,12 @@ class ReportAPI(BaseSupersetView):
                 "aliasName": chart.label_mapping[item]
             } for item in query_dims]
 
-        if druid_query.get("metric"):
-            druid_query.pop("metric")
+        if druid_query.get('filter') is not None:
+            druid_query['filters'] = druid_query.pop('filter')
+            if filters['filters'].get('fields') is not None:
+                druid_query['filters'] = druid_query['filters']['fields']
+            else:
+                druid_query['filters'] = [druid_query['filters']]
 
         if druid_query.get("aggregations"):
             for i, aggregation in enumerate(druid_query['aggregations']):
@@ -579,15 +585,15 @@ class ReportAPI(BaseSupersetView):
         }
 
 
-        # if chart.chart_mode == 'add':
-        #     merge_config.update({
-        #       "rollupRange": 1,
-        #       "rollupAge": rollup_ages[chart.rolling_window],
-        #       "rollupCol": chart.label_mapping[chart.x_axis_label],
-        #       "frequency": report_frequency,
-        #       "container": "reports",
-        #       "rollup": True
-        #     })
+        if chart.chart_mode == 'add':
+            merge_config.update({
+              "rollupRange": 1,
+              "rollupAge": rollup_ages[chart.rolling_window],
+              "rollupCol": chart.label_mapping[chart.x_axis_label],
+              "frequency": report_frequency,
+              "container": "reports",
+              "rollup": 1
+            })
 
         config_template = {
             'reportId': chart.chart_id, # Unique id of the report
@@ -600,7 +606,7 @@ class ReportAPI(BaseSupersetView):
                     'queryType': druid_query.get('queryType'), # Query type of the report - groupBy, topN
                     'dateRange': {
                         'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear
-                        'granularity': chart.chart_granularity # Granularity of the report - DAY, WEEK, MONTH, ALL
+                        'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL
                     },
                     'mergeConfig': merge_config,
                     'metrics': [
@@ -622,7 +628,7 @@ class ReportAPI(BaseSupersetView):
                 },
                 'store': 'azure', # Output store location. One of local, azure, s3
                 'container': 'reports', # Output container.
-                'key': 'druid-reports/' # File prefix if any
+                'key': 'hawk-eye/' # File prefix if any
             },
         }
 
@@ -699,7 +705,7 @@ class ReportAPI(BaseSupersetView):
                 "dataSource": [
                     {
                         "id": chart.chart_id,
-                        "path": "/reports/hawk-eye/{}.json".format(chart.chart_id)
+                        "path": "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
                     }
                 ],
                 "charts": []

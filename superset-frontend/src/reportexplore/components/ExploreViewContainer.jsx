@@ -169,7 +169,11 @@ class ExploreViewContainer extends React.Component {
       }
       return value
     })
-    console.log(metrics)
+
+    if (slice.form_data.granularity == "one day") {
+      metrics.push({ label: "date", value: "date" })
+    }
+
     let report_config = await SupersetClient.get({
       url: `/reportapi/report_config/${slice.slice_id}`,
     }).catch(() =>
