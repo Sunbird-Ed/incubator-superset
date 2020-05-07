@@ -552,7 +552,7 @@ class ReportAPI(BaseSupersetView):
 
         if druid_query.get('filter') is not None:
             druid_query['filters'] = druid_query.pop('filter')
-            if filters['filters'].get('fields') is not None:
+            if druid_query['filters'].get('fields') is not None:
                 druid_query['filters'] = druid_query['filters']['fields']
             else:
                 druid_query['filters'] = [druid_query['filters']]
