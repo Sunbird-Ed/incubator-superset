@@ -762,7 +762,7 @@ class ReportAPI(BaseSupersetView):
                         {
                             "scaleLabel": {
                                 "display": True,
-                                "labelString": y_axis_label
+                                "labelString": "Count"
                             }
                         }
                     ],
