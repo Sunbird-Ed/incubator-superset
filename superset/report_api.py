@@ -431,8 +431,8 @@ class ReportAPI(BaseSupersetView):
             druid_query.pop("intervals")
 
             metric = {
-                'metric': chart.y_axis_label,
-                'label': chart.label_mapping[chart.y_axis_label],
+                'metric': chart.label_mapping[chart.y_axis_label],
+                'label': chart.label_mapping[chart.label_mapping[chart.y_axis_label]],
                 'druidQuery': druid_query
             }
 
@@ -440,8 +440,7 @@ class ReportAPI(BaseSupersetView):
 
             job_config['config']['reportConfig']['labels'] = chart.label_mapping
 
-            if chart.y_axis_label not in job_config['config']['reportConfig']['output'][0]['metrics']:
-                job_config['config']['reportConfig']['output'][0]['metrics'].append(chart.y_axis_label)
+            job_config['config']['reportConfig']['output'][0]['metrics'].append(chart.label_mapping[chart.y_axis_label])
 
             job_config['description'] = chart.hawkeye_report.report_description
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
@@ -475,8 +474,7 @@ class ReportAPI(BaseSupersetView):
             charts = filter(lambda x: x['chartid'] == chart.chart_id, report_config['reportconfig']['charts'])
             chart_config = charts[0]
 
-            y_axis_label = chart.label_mapping.get(chart.y_axis_label)
-            y_axis_label = y_axis_label if y_axis_label is not None else chart.y_axis_label
+            y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
             chart_config['datasets'] = chart_config['datasets'].append({
                 "dataExpr": y_axis_label,
@@ -544,7 +542,7 @@ class ReportAPI(BaseSupersetView):
                             chart.hawkeye_report.report_frequency
 
         druid_query = chart.druid_query
-        druid_query['queryType'] = "groupBy"
+        # druid_query['queryType'] = "groupBy"
         druid_query.pop("intervals")
 
         if druid_query.get("dimension"):
@@ -578,7 +576,7 @@ class ReportAPI(BaseSupersetView):
             for i, aggregation in enumerate(druid_query['aggregations']):
                 if aggregation['name'] == "count":
                     druid_query['aggregations'][i] = {
-                        "name": "total_count",
+                        "name": chart.label_mapping[chart.y_axis_label],
                         "type": "longSum",
                         "fieldName": "total_count"
                     }
@@ -628,7 +626,7 @@ class ReportAPI(BaseSupersetView):
                     'mergeConfig': merge_config,
                     'metrics': [
                         {
-                            'metric': chart.y_axis_label, # Unique metric ID
+                            'metric': chart.label_mapping[chart.y_axis_label], # Unique metric ID
                             'label': chart.label_mapping[chart.y_axis_label], # Metric Label
                             'druidQuery': druid_query # Actual druid query
                         }
@@ -637,7 +635,7 @@ class ReportAPI(BaseSupersetView):
                     'output': [
                         {
                             'type': 'csv', # Output type - csv, json
-                            'metrics': [chart.y_axis_label], # Metrics to be output. Defaults to *
+                            'metrics': [chart.label_mapping[chart.y_axis_label]], # Metrics to be output. Defaults to *
                             'dims': ['date'], # Dimensions to be used to split the data into smaller files
                             'fileParameters': ['id', 'dims'] # Dimensions to be used in the file name. Defaults to [report_id, date]
                         }
@@ -733,11 +731,9 @@ class ReportAPI(BaseSupersetView):
 
 
     def report_chart_template(self, chart):
-        x_axis_label = chart.label_mapping.get(chart.x_axis_label)
-        x_axis_label = x_axis_label if x_axis_label is not None else chart.x_axis_label
+        x_axis_label = chart.label_mapping[chart.label_mapping[chart.x_axis_label]]
 
-        y_axis_label = chart.label_mapping.get(chart.y_axis_label)
-        y_axis_label = y_axis_label if y_axis_label is not None else chart.y_axis_label
+        y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
         report_chart = {
             "datasets": [
