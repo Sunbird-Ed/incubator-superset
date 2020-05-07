@@ -467,6 +467,11 @@ class ReportAPI(BaseSupersetView):
             chart_config = self.report_chart_template(chart)
 
             report_config['reportconfig']['charts'].append(chart_config)
+
+            report_config['reportconfig']['dataSource'].append({
+                "id": chart.chart_id,
+                "path": "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
+            })
         else:
             charts = [c for c in filter(lambda x: x['chartId'] == chart.chart_id, report_config['reportconfig']['charts'])]
             chart_config = charts[0]
