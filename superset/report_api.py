@@ -731,7 +731,7 @@ class ReportAPI(BaseSupersetView):
 
 
     def report_chart_template(self, chart):
-        x_axis_label = chart.label_mapping[chart.label_mapping[chart.x_axis_label]]
+        x_axis_label = chart.label_mapping[chart.x_axis_label]
 
         y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
