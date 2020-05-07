@@ -427,13 +427,10 @@ class ReportAPI(BaseSupersetView):
             y_axis_label = chart.label_mapping.get(chart.y_axis_label)
             y_axis_label = y_axis_label if y_axis_label is not None else chart.y_axis_label
 
-            druid_query = chart.druid_query
-            druid_query.pop("intervals")
-
             metric = {
                 'metric': chart.label_mapping[chart.y_axis_label],
                 'label': chart.label_mapping[chart.label_mapping[chart.y_axis_label]],
-                'druidQuery': druid_query
+                'druidQuery': self.generate_druid_query(chart, chart.druid_query)
             }
 
             job_config['config']['reportConfig']['metrics'].append(metric)
@@ -524,9 +521,8 @@ class ReportAPI(BaseSupersetView):
         print(response.json())
 
 
-    def job_config_template(self, chart):
-        # dimensions = map(lambda x: x['value'], chart.dimensions)
-        # dimensions = [chart.label_mapping[item] for item in dimensions]
+
+    def generate_druid_query(self, chart, druid_query):
 
         def change_filter(filters):
             for i, fil in enumerate(filters):
@@ -543,11 +539,6 @@ class ReportAPI(BaseSupersetView):
                     filters[i]['fields'] = change_filter(fil.get('fields'))
             return filters
 
-
-        report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
-                            chart.hawkeye_report.report_frequency
-
-        druid_query = chart.druid_query
         # druid_query['queryType'] = "groupBy"
         druid_query.pop("intervals")
 
@@ -587,6 +578,16 @@ class ReportAPI(BaseSupersetView):
                         "fieldName": "total_count"
                     }
 
+        return druid_query
+
+    def job_config_template(self, chart):
+        # dimensions = map(lambda x: x['value'], chart.dimensions)
+        # dimensions = [chart.label_mapping[item] for item in dimensions]
+
+        report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
+                            chart.hawkeye_report.report_frequency
+
+        druid_query = self.generate_druid_query(chart, chart.druid_query)
 
         merge_config = {
           "basePath": "/mount/data/analytics/tmp",
