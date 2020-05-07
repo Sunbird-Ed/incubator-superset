@@ -529,12 +529,14 @@ class ReportAPI(BaseSupersetView):
             for i, fil in enumerate(filters):
                 if fil.get('type') == "selector":
                     fil['type'] = "equals"
+                    fil = [fil]
                 elif fil.get('fields') is not None and fil.get('type') == 'or':
                     fil = {
                         'type': 'in',
                         'dimension': fil.get('fields')[0]['dimension'],
                         'values': [item for item in map(lambda x: x['value'], fil.get('fields'))]
                     }
+                    fil = [fil]
                 elif fil.get('fields'):
                     fil = change_filter(fil.get('fields'))
 
