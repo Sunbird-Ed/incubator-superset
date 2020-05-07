@@ -533,8 +533,8 @@ class ReportAPI(BaseSupersetView):
         report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
                             chart.hawkeye_report.report_frequency
 
-        druid_query['queryType'] = "groupBy"
         druid_query = chart.druid_query
+        druid_query['queryType'] = "groupBy"
         druid_query.pop("intervals")
 
         if druid_query.get("dimension"):
