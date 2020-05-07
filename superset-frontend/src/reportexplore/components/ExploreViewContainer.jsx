@@ -171,7 +171,7 @@ class ExploreViewContainer extends React.Component {
     })
 
     if (slice.form_data.granularity == "one day") {
-      metrics.push({ label: "date", value: "date" })
+      dimensionsList.push({ label: "date", value: "date" })
     }
 
     let report_config = await SupersetClient.get({
