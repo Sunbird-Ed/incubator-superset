@@ -569,6 +569,11 @@ class ReportAPI(BaseSupersetView):
 
         druid_query['filters'] = change_filter(druid_query['filters'])
 
+        if druid_query.get('granularity') is not None:
+            druid_query['granularity'] = chart.chart_granularity.lower()
+        else:
+            druid_query['granularity'] = "all"
+
         if druid_query.get("aggregations"):
             for i, aggregation in enumerate(druid_query['aggregations']):
                 if aggregation['name'] == "count":
