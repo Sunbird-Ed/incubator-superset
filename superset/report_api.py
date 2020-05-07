@@ -525,19 +525,21 @@ class ReportAPI(BaseSupersetView):
     def generate_druid_query(self, chart, druid_query):
 
         def change_filter(filters):
+            result_filter = []
             for i, fil in enumerate(filters):
                 if fil.get('type') == "selector":
-                    filters[i]['type'] = "equals"
-
-                if fil.get('fields') is not None and fil.get('type') == 'or':
-                    filters[i] = {
+                    fil['type'] = "equals"
+                elif fil.get('fields') is not None and fil.get('type') == 'or':
+                    fil = {
                         'type': 'in',
                         'dimension': fil.get('fields')[0]['dimension'],
                         'values': [item for item in map(lambda x: x['value'], fil.get('fields'))]
                     }
                 elif fil.get('fields'):
-                    filters[i]['fields'] = change_filter(fil.get('fields'))
-            return filters
+                    fil = change_filter(fil.get('fields'))
+
+                result_filter = result_filter + fil
+            return result_filter
 
         # druid_query['queryType'] = "groupBy"
         druid_query.pop("intervals")
