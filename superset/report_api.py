@@ -471,7 +471,7 @@ class ReportAPI(BaseSupersetView):
 
             report_config['reportconfig']['charts'].append(chart_config)
         else:
-            charts = filter(lambda x: x['chartid'] == chart.chart_id, report_config['reportconfig']['charts'])
+            charts = [c for c in filter(lambda x: x['chartId'] == chart.chart_id, report_config['reportconfig']['charts'])]
             chart_config = charts[0]
 
             y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
@@ -481,9 +481,9 @@ class ReportAPI(BaseSupersetView):
                 "label": y_axis_label
             })
 
-            for x in report_config['reportconfig']['charts']:
-                if x['chartid'] == chart.chart_id:
-                    x = chart_config
+            for i, x in report_config['reportconfig']['charts']:
+                if x['chartId'] == chart.chart_id:
+                    report_config['reportconfig']['charts'][i] = chart_config
 
         report_id = self.post_report_config(report_config, published_report_id)
 
@@ -742,6 +742,7 @@ class ReportAPI(BaseSupersetView):
         y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
         report_chart = {
+            "chartId": chart.chart_id,
             "datasets": [
                 {
                     "dataExpr": y_axis_label,
