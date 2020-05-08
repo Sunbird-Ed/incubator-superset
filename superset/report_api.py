@@ -606,20 +606,20 @@ class ReportAPI(BaseSupersetView):
         }
 
         rollup_ages = {
-            "AcademicYear": "ACADEMIC_YEAR",
-            "YTD": "GEN_YEAR",
-            "LastMonth": "MONTH",
-            "Last30Days": "MONTH",
-            "LastWeek": "WEEK",
-            "Last7Days": "WEEK",
-            "LastDay": "DAY"
+            "AcademicYear": {"name": "ACADEMIC_YEAR", "age": 1},
+            "YTD": {"name": "GEN_YEAR", "age": 1},
+            "LastMonth": {"name": "MONTH", "age": 1},
+            "Last30Days": {"name": "DAY", "age": 30},
+            "LastWeek": {"name": "WEEK", "age": 1},
+            "Last7Days": {"name": "DAY", "age": 7},
+            "LastDay": {"name": "DAY", "age": 1}
         }
 
 
         if chart.chart_mode == 'add':
             merge_config.update({
-              "rollupRange": 1,
-              "rollupAge": rollup_ages[chart.rolling_window],
+              "rollupRange": rollup_ages[chart.rolling_window]['age'],
+              "rollupAge": rollup_ages[chart.rolling_window]['name'],
               "rollupCol": chart.label_mapping[chart.x_axis_label],
               "frequency": report_frequency,
               "container": "reports",
