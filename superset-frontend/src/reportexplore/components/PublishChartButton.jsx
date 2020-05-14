@@ -164,7 +164,7 @@ export default class PublishChartButton extends React.Component {
       additionalChanges.rollingWindow = chart.rollingWindow
       additionalChanges.chartMode = chart.chartMode
       additionalChanges.xAxisLabel = chart.xAxisLabel
-      // additionalChanges.yAxisLabel = chart.yAxisLabel
+      additionalChanges.yAxisLabel = chart.yAxisLabel
       additionalChanges.labelMapping = chart.labelMapping
       // additionalChanges.dimensions = chart.dimensions
     } else if (fieldType == "chart") {
@@ -314,6 +314,13 @@ export default class PublishChartButton extends React.Component {
       console.log("Successfully updated")
     })
     .catch(() => {
+      let toasts = [{
+        id: "sample",
+        toastType: "DANGER_TOAST",
+        text: "<h5>Report config update is failed</h5>",
+        duration: 3000
+      }]
+      this.setState({ submitting: false, toasts })
       console.log("Save failed::Submission")
     });
   }
@@ -338,6 +345,13 @@ export default class PublishChartButton extends React.Component {
       console.log("Successfully submitted for review")
     })
     .catch(() => {
+      let toasts = [{
+        id: "sample",
+        toastType: "DANGER_TOAST",
+        text: "<h5>Report publish to portal is failed</h5>",
+        duration: 3000
+      }]
+      this.setState({ submitting: false, toasts })
       console.log("Save failed::Submission")
     });
   }

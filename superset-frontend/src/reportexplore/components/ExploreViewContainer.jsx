@@ -160,15 +160,22 @@ class ExploreViewContainer extends React.Component {
 
     let dimensionsList = slice.form_data.groupby.map(dim => { return { label: dim, value: dim }})
 
-    let metrics = slice.form_data.metrics.map((metr) => {
-      let value = undefined
-      if(typeof(metr) == "object") {
-        value = { label: metr.label, value: metr.label }
-      } else {
-        value = { label: "total_count", value: "total_count" }
-      }
-      return value
-    })
+    let metrics = undefined
+
+    if (!!slice.form_data.metric) {
+      metrics = [{ label: "total_count", value: "total_count" }]
+    } else {
+      metrics = slice.form_data.metrics.map((metr) => {
+        let value = undefined
+        if(typeof(metr) == "object") {
+          value = { label: metr.label, value: metr.label }
+        } else {
+          value = { label: "total_count", value: "total_count" }
+        }
+        return value
+      })
+    }
+
 
     if (slice.form_data.granularity == "one day") {
       dimensionsList.push({ label: "date", value: "date" })

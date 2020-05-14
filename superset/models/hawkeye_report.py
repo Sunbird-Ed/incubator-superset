@@ -1,5 +1,6 @@
 import simplejson as json
 import pdb
+import itertools 
 
 from flask_appbuilder import Model
 from typing import Any, Dict
@@ -15,7 +16,6 @@ class HawkeyeReport(
     __tablename__ = 'hawkeye_reports'
 
     id = Column(Integer, primary_key=True)  # pylint: disable=invalid-name
-    is_new_report = Column(Boolean)
 
     report_name = Column(String(250))
     report_description = Column(String(250))
@@ -29,6 +29,13 @@ class HawkeyeReport(
 
     @property
     def data(self) -> Dict[str, Any]:
+        charts = sorted(self.charts, key=lambda i: i.id, reverse=True)
+
+        associated_charts = []
+
+        for chart_id, chart_group in itertools.groupby(charts, lambda x : x.chart_id):
+            associated_charts.append([item for item in chart_group][0].data)
+
         return {
             'reportId': self.id,
             'reportName': self.report_name,
@@ -36,5 +43,5 @@ class HawkeyeReport(
             'reportSummary': self.report_summary,
             'reportType': self.report_type,
             'reportFrequency': self.report_frequency,
-            'charts': [item.data for item in self.charts]
+            'charts': associated_charts
         }

@@ -3,6 +3,7 @@ import pdb
 import os
 import requests as http_client
 
+from time import sleep
 from flask_appbuilder.security.decorators import has_access, has_access_api
 from flask_appbuilder import expose
 from flask import request, g, flash
@@ -49,6 +50,8 @@ REVIEW = "review"
 APPROVED = "approved"
 DRAFT = "draft"
 PUBLISHED = "live"
+PORTAL_LIVE = "portal_live"
+RETIRED = "retired"
 
 
 def is_owner(obj, user):
@@ -252,12 +255,12 @@ class ReportAPI(BaseSupersetView):
         report.report_summary = form_data["reportSummary"]
         report.report_type = form_data["reportType"]
         report.report_frequency = form_data["reportFrequency"]
-        report.is_new_report = form_data["isNewReport"]
         if report.id:
             self.overwrite_record(report)
         else:
             self.save_record(report)
 
+        chart.is_new_report = form_data["isNewReport"]
         chart.is_new_chart = form_data["isNewChart"]
         chart.hawkeye_report_id = report.id
         chart.chart_id = form_data["chartId"]
@@ -329,7 +332,20 @@ class ReportAPI(BaseSupersetView):
     def report_config(self, slice_id=None):
         report = db.session.query(HawkeyeChart).filter_by(slice_id=slice_id).one_or_none()
 
-        report_cofig = report.data if report is not None else {}
+        if report is not None:
+            published_report_id = report.hawkeye_report.published_report_id
+            if published_report_id is not None and report.chart_status is not 'retired':
+                try:
+                    report_config = self.get_report_config(published_report_id)
+
+                    if report_config is not None and report_config['status'] in ['live', 'retired']:
+                        report.chart_status = PORTAL_LIVE if report_config['status'] == 'live' else RETIRED
+                        self.overwrite_record(report)
+                except Exception as e:
+                    pass
+            report_cofig = report.data
+        else:
+            report_cofig = {}
 
         report_cofig.update({
             "portalHost": PORTAL_HOST
@@ -396,26 +412,54 @@ class ReportAPI(BaseSupersetView):
             logger.exception(e)
             return json_error_response(e)
 
-        # chart.chart_status = PUBLISHED if chart.chart_status == APPROVED else APPROVED
-        chart.chart_status = PUBLISHED
         chart.druid_query = json.loads(query) if isinstance(query, str) else query
 
+        publish_success = True
         report_id = None
+        counter = 0
+        while counter <= 5:
+            try:
+                print("Retrying for publish_report_portal :: {}".format(counter))
+                report_id = self.publish_report_portal(chart)
+                break;
+            except Exception as e:
+                counter += 1;
+                sleep(2)
+        else:
+            print("Max retries reached... publish_report_portal")
+            publish_success = False
 
-        if chart.chart_status == PUBLISHED:
-            report_id = self.publish_report_portal(chart)
-            self.publish_job_analytics(chart)
+        counter = 0
+        while counter <= 5 and publish_success:
+            try:
+                print("Retrying for publish_job_analytics :: {}".format(counter))
+                self.publish_job_analytics(chart)
+                break;
+            except Exception as e:
+                counter += 1;
+                sleep(2)
+        else:
+            print("Max retries reached... publish_report_portal")
+            publish_success = False
 
-        chart.hawkeye_report.published_report_id = report_id
-        chart.submitted_as_job = True
+        if publish_success:
+            chart.chart_status = PUBLISHED
+            chart.hawkeye_report.published_report_id = report_id
+            chart.submitted_as_job = True
 
-        self.overwrite_record(chart)
+            self.overwrite_record(chart)
 
-        return json_success(json.dumps({
-            "status": "SUCCESS",
-            "report_status": chart.chart_status,
-            "report_id": chart.hawkeye_report.published_report_id
-        }))
+        if publish_success:
+            return json_success(json.dumps({
+                "status": "SUCCESS",
+                "report_status": chart.chart_status,
+                "report_id": chart.hawkeye_report.published_report_id
+            }))
+        else:
+            return json_error_response(
+                _("Publishing report got failed"),
+                status=400,
+            )
 
 
     def publish_job_analytics(self, chart):
@@ -526,7 +570,6 @@ class ReportAPI(BaseSupersetView):
         print(response.json())
 
 
-
     def generate_druid_query(self, chart, druid_query):
 
         def change_filter(filters):
@@ -548,7 +591,7 @@ class ReportAPI(BaseSupersetView):
                 result_filter = result_filter + fil
             return result_filter
 
-        druid_query['queryType'] = "groupBy"
+        druid_query['queryType'] = "groupBy" if druid_query['queryType'] == 'topN' else druid_query['queryType']
         druid_query.pop("intervals")
 
         if druid_query.get("dimension"):
@@ -571,23 +614,33 @@ class ReportAPI(BaseSupersetView):
             else:
                 druid_query['filters'] = [druid_query['filters']]
 
-        druid_query['filters'] = change_filter(druid_query['filters'])
+        if druid_query.get('filters') is not None:
+            druid_query['filters'] = change_filter(druid_query['filters'])
 
         if druid_query.get('granularity') is not None:
             druid_query['granularity'] = chart.chart_granularity.lower()
         else:
             druid_query['granularity'] = "all"
 
-        if druid_query.get("aggregations"):
-            for i, aggregation in enumerate(druid_query['aggregations']):
-                if aggregation['name'] == "count":
-                    druid_query['aggregations'][i] = {
-                        "name": chart.label_mapping[chart.y_axis_label],
-                        "type": "longSum",
-                        "fieldName": "total_count"
-                    }
+        if druid_query.get('aggregation'):
+            druid_query['aggregations'] = [druid_query.pop('aggregation')]
 
+        pdb.set_trace()
+        if druid_query.get('aggregations'):
+            for i, aggregation in enumerate(druid_query['aggregations']):
+                if aggregation['name'] == 'count':
+                    druid_query['aggregations'][i] = {
+                        'name': chart.label_mapping[chart.y_axis_label],
+                        'type': 'longSum',
+                        'fieldName': 'count'
+                    }
+                else:
+                    druid_query['aggregations'][i].update({
+                        'name': chart.label_mapping[chart.y_axis_label]
+                    })
+                    druid_query['aggregations'][i].pop('fieldNames')
         return druid_query
+
 
     def job_config_template(self, chart):
         # dimensions = map(lambda x: x['value'], chart.dimensions)
@@ -616,7 +669,7 @@ class ReportAPI(BaseSupersetView):
         }
 
 
-        if chart.chart_mode == 'add':
+        if chart.chart_mode == 'add' and chart.hawkeye_report.report_type == 'scheduled':
             merge_config.update({
               "rollupRange": rollup_ages[chart.rolling_window]['age'],
               "rollupAge": rollup_ages[chart.rolling_window]['name'],
@@ -625,6 +678,22 @@ class ReportAPI(BaseSupersetView):
               "container": "reports",
               "rollup": 1
             })
+
+        if chart.hawkeye_report.report_type == 'scheduled':
+            interval = {
+                'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear
+                'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL
+            }
+        else:
+            intervals = chart.druid_query['intervals']
+            start_date, end_date = intervals.split("/")
+            interval = {
+                "interval": {
+                    "startDate": start_date.split("T")[0],
+                    "endDate": end_date.split("T")[0]
+                },
+                'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL
+            }
 
         config_template = {
             'reportId': chart.chart_id, # Unique id of the report
@@ -703,8 +772,6 @@ class ReportAPI(BaseSupersetView):
 
         response = http_client.request(method, url, headers=headers, data=json.dumps(report_config))
 
-        print(response.json())
-
         report_id = response.json()['result']['reportId']
         
         return report_id
@@ -761,42 +828,7 @@ class ReportAPI(BaseSupersetView):
             ],
             "labelsExpr": x_axis_label,
             "chartType": chart.chart_type,
-            "options": {
-                "scales": {
-                    "yAxes": [
-                        {
-                            "scaleLabel": {
-                                "display": True,
-                                "labelString": "Count"
-                            }
-                        }
-                    ],
-                    "xAxes": [
-                        {
-                            "scaleLabel": {
-                                "display": True,
-                                "labelString": x_axis_label
-                            }
-                        }
-                    ]
-                },
-                "tooltips": {
-                    "intersect": False,
-                    "mode": "x-axis",
-                    "titleSpacing": 5,
-                    "bodySpacing": 5
-                },
-                "title": {
-                    "fontSize": 16,
-                    "display": True,
-                    "text": chart.chart_name
-                },
-                "legend": {
-                    "display": False
-                },
-                "responsive": True,
-                "showLastUpdatedOn": True
-            },
+            "options": self.report_chart_option(chart),
             "dataSource": {
                 "ids": [
                     chart.chart_id
@@ -806,6 +838,97 @@ class ReportAPI(BaseSupersetView):
         }
 
         return report_chart
+
+
+    def report_chart_option(self, chart):
+        x_axis_label = chart.label_mapping[chart.x_axis_label]
+
+        y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
+
+        template = {
+            'scales': {
+                'yAxes': [
+                    {
+                        'scaleLabel': {
+                            'display': True,
+                            'labelString': 'Count'
+                        }
+                    }
+                ],
+                'xAxes': [
+                    {
+                        'scaleLabel': {
+                            'display': True,
+                            'labelString': x_axis_label
+                        }
+                    }
+                ]
+            },
+            'tooltips': {
+                'intersect': False,
+                'mode': 'x-axis',
+                'titleSpacing': 5,
+                'bodySpacing': 5
+            },
+            'title': {
+                'fontSize': 16,
+                'display': True,
+                'text': chart.chart_name
+            },
+            'legend': {
+                'display': False
+            },
+            'responsive': True,
+            'showLastUpdatedOn': True
+        }
+
+        if chart.chart_type in ['pie']:
+            template.pop('scales')
+            template['tooltips'] = {
+                "titleSpacing": 5,
+                "bodySpacing": 5
+            }
+        elif chart.chart_type == 'horizontalBar':
+            template['scales'] = {
+                "xAxes": [
+                    {
+                        "scaleLabel": {
+                            "display": True,
+                            "labelString": y_axis_label
+                        }
+                    }
+                ]
+            }
+
+            template['tooltips'] = {
+                "intersect": False,
+                "mode": "y",
+                "titleSpacing": 5,
+                "bodySpacing": 5
+            }
+        elif chart.chart_type == 'stackedbar':
+            template['scales'] = {
+                "yAxes": [
+                    {
+                        "stacked": True,
+                        "scaleLabel": {
+                            "display": True,
+                            "labelString": y_axis_label
+                        }
+                    }
+                ],
+                "xAxes": [
+                    {
+                        "stacked": True,
+                        "scaleLabel": {
+                            "display": True,
+                            "labelString": x_axis_label
+                        }
+                    }
+                ]
+            }
+
+        return template
 
 
     def save_or_overwrite_slice(

@@ -18,6 +18,7 @@ class HawkeyeChart(
 
     id = Column(Integer, primary_key=True)  # pylint: disable=invalid-name
     is_new_chart = Column(Boolean)
+    is_new_report = Column(Boolean)
 
     hawkeye_report_id = Column(Integer, ForeignKey("hawkeye_reports.id"), nullable=False)
     slice_id = Column(Integer, ForeignKey("slices.id"), nullable=False)
@@ -56,8 +57,8 @@ class HawkeyeChart(
     @property
     def data(self) -> Dict[str, Any]:
         return {
-            "isNewReport": True,
-            "isNewChart": True if self.is_new_chart is None or self.is_new_chart else False,
+            "isNewReport": self.is_new_report,
+            "isNewChart": self.is_new_chart,
 
             "reportId": self.hawkeye_report.id,
             "reportName": self.hawkeye_report.report_name,
