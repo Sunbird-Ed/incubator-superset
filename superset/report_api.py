@@ -8,6 +8,7 @@ from flask_appbuilder.security.decorators import has_access, has_access_api
 from flask_appbuilder import expose
 from flask import request, g, flash
 from flask_babel import lazy_gettext as _
+from copy import deepcopy
 
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.utils.decorators import etag_cache, stats_timing
@@ -409,7 +410,7 @@ class ReportAPI(BaseSupersetView):
             if query_obj:
                 query = viz_obj.datasource.get_query_str(query_obj)
         except Exception as e:
-            logger.exception(e)
+            print(str(e))
             return json_error_response(e)
 
         chart.druid_query = json.loads(query) if isinstance(query, str) else query
@@ -423,6 +424,7 @@ class ReportAPI(BaseSupersetView):
                 report_id = self.publish_report_portal(chart)
                 break;
             except Exception as e:
+                print(str(e))
                 counter += 1;
                 sleep(2)
         else:
@@ -436,10 +438,11 @@ class ReportAPI(BaseSupersetView):
                 self.publish_job_analytics(chart)
                 break;
             except Exception as e:
+                print(str(e))
                 counter += 1;
                 sleep(2)
         else:
-            print("Max retries reached... publish_report_portal")
+            print("Max retries reached... publish_job_analytics")
             publish_success = False
 
         if publish_success:
@@ -474,7 +477,7 @@ class ReportAPI(BaseSupersetView):
             metric = {
                 'metric': chart.label_mapping[chart.y_axis_label],
                 'label': chart.label_mapping[chart.label_mapping[chart.y_axis_label]],
-                'druidQuery': self.generate_druid_query(chart, chart.druid_query)
+                'druidQuery': self.generate_druid_query(chart, deepcopy(chart.druid_query))
             }
 
             job_config['config']['reportConfig']['metrics'].append(metric)
@@ -491,7 +494,14 @@ class ReportAPI(BaseSupersetView):
             }
             job_config['createdBy'] = 'User1'
 
-        self.post_job_config(job_config, chart)
+        creation_in_process = True
+
+        response = self.post_job_config(job_config, chart)
+        if response['params'].get('errmsg') is not None and 'already' in response['params'].get('errmsg'):
+            chart.chart_id += '_1'
+            self.publish_job_analytics(chart)
+        elif response['params'].get('errmsg') is not None:
+            raise Exception('ERROR::Creation or updation of job config')
 
 
     def publish_report_portal(self, chart):
@@ -567,7 +577,7 @@ class ReportAPI(BaseSupersetView):
 
         response = http_client.request(method, url, headers=headers, data=json.dumps(job_config))
 
-        print(response.json())
+        return response.json()
 
 
     def generate_druid_query(self, chart, druid_query):
@@ -575,36 +585,65 @@ class ReportAPI(BaseSupersetView):
         def change_filter(filters):
             result_filter = []
             for i, fil in enumerate(filters):
-                if fil.get('type') == "selector":
-                    fil['type'] = "equals"
+                if fil.get('type') == 'selector' or (fil.get('type') == 'not' and fil['field'].get('type') == 'selector'):
+                    if fil.get('value') == '' or (fil.get('type') == 'not' and fil['field'].get('value') == ''):
+                        fil['type'] = 'isnull' if fil.get('value') == '' else 'isnotnull'
+                    else:
+                        fil['type'] = 'equals' if fil.get('type') == 'selector' else 'notequals'
+
+                    if fil.get('type') in ['notequals', 'isnotnull']:
+                        fil['dimension'] = fil['field'].get('dimension')
+                        if fil.get('type') == 'notequals':
+                            fil['value'] = fil['field'].get('value')
+                        fil.pop('field')
+
                     fil = [fil]
-                elif fil.get('fields') is not None and fil.get('type') == 'or':
+                elif (fil.get('type') == 'or' and fil.get('fields') is not None) or \
+                     (fil.get('type') == 'not' and fil['field'].get('fields') is not None):
+
+                    fields = deepcopy(fil.get('fields')) if fil.get('type') == 'or' else deepcopy(fil['field'].get('fields'))
                     fil = {
-                        'type': 'in',
-                        'dimension': fil.get('fields')[0]['dimension'],
-                        'values': [item for item in map(lambda x: x['value'], fil.get('fields'))]
+                        'type': 'in' if fil.get('type') == 'or' else 'notin',
+                        'dimension': fields[0]['dimension'],
+                        'values': [item for item in map(lambda x: x['value'], fields)]
                     }
                     fil = [fil]
+                elif fil.get('type') == 'bound':
+                    fil['bound_type'] = 'greaterthan' if fil.get('lower') is not None else 'lessthan'
+
+                    fil['value'] = fil.get('lower') if fil.get('lower') is not None else fil.get('upper')
+
+                    if fil.get('lowerStrict') is False:
+                        fil['value'] -= 1
+                    elif fil.get('upperStrict') is False:
+                        fil['value'] += 1
+
+                    fil = [{
+                        'dimension': fil.get('dimension'),
+                        'type': fil['bound_type'],
+                        'value': fil['value']
+                    }]
                 elif fil.get('fields'):
                     fil = change_filter(fil.get('fields'))
 
                 result_filter = result_filter + fil
             return result_filter
 
-        druid_query['queryType'] = "groupBy" if druid_query['queryType'] == 'topN' else druid_query['queryType']
-        druid_query.pop("intervals")
+        druid_query['queryType'] = 'groupBy' if druid_query['queryType'] == 'topN' else druid_query['queryType']
+        if druid_query.get('intervals') is not None:
+            druid_query.pop('intervals')
 
-        if druid_query.get("dimension"):
-            query_dims = druid_query.pop("dimension")
+        if druid_query.get('dimension'):
+            query_dims = druid_query.pop('dimension')
             druid_query['dimensions'] = [{
-                "fieldName": query_dims,
-                "aliasName": chart.label_mapping[query_dims]
+                'fieldName': query_dims,
+                'aliasName': chart.label_mapping[query_dims]
             }]
-        elif druid_query.get("dimensions"):
-            query_dims = druid_query.pop("dimensions")
+        elif druid_query.get('dimensions'):
+            query_dims = druid_query.pop('dimensions')
             druid_query['dimensions'] = [{
-                "fieldName": item,
-                "aliasName": chart.label_mapping[item]
+                'fieldName': item,
+                'aliasName': chart.label_mapping[item]
             } for item in query_dims]
 
         if druid_query.get('filter') is not None:
@@ -620,25 +659,31 @@ class ReportAPI(BaseSupersetView):
         if druid_query.get('granularity') is not None:
             druid_query['granularity'] = chart.chart_granularity.lower()
         else:
-            druid_query['granularity'] = "all"
+            druid_query['granularity'] = 'all'
 
         if druid_query.get('aggregation'):
             druid_query['aggregations'] = [druid_query.pop('aggregation')]
 
-        pdb.set_trace()
         if druid_query.get('aggregations'):
             for i, aggregation in enumerate(druid_query['aggregations']):
                 if aggregation['name'] == 'count':
                     druid_query['aggregations'][i] = {
                         'name': chart.label_mapping[chart.y_axis_label],
-                        'type': 'longSum',
+                        'type': 'count',
                         'fieldName': 'count'
                     }
                 else:
                     druid_query['aggregations'][i].update({
                         'name': chart.label_mapping[chart.y_axis_label]
                     })
-                    druid_query['aggregations'][i].pop('fieldNames')
+                    if druid_query['aggregations'][i].get('fieldNames'):
+                        druid_query['aggregations'][i].pop('fieldNames')
+
+        if druid_query.get('metric'):
+            druid_query.pop('metric')
+        elif druid_query.get('metrics'):
+            druid_query.pop('metrics')
+
         return druid_query
 
 
@@ -648,8 +693,6 @@ class ReportAPI(BaseSupersetView):
 
         report_frequency = "ONCE" if chart.hawkeye_report.report_type == 'one-time' else \
                             chart.hawkeye_report.report_frequency
-
-        druid_query = self.generate_druid_query(chart, chart.druid_query)
 
         merge_config = {
           "basePath": "/mount/data/analytics/tmp",
@@ -668,7 +711,6 @@ class ReportAPI(BaseSupersetView):
             "LastDay": {"name": "DAY", "age": 1}
         }
 
-
         if chart.chart_mode == 'add' and chart.hawkeye_report.report_type == 'scheduled':
             merge_config.update({
               "rollupRange": rollup_ages[chart.rolling_window]['age'],
@@ -681,7 +723,7 @@ class ReportAPI(BaseSupersetView):
 
         if chart.hawkeye_report.report_type == 'scheduled':
             interval = {
-                'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear
+                'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear,
                 'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL
             }
         else:
@@ -695,6 +737,8 @@ class ReportAPI(BaseSupersetView):
                 'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL
             }
 
+        druid_query = self.generate_druid_query(chart, deepcopy(chart.druid_query))
+
         config_template = {
             'reportId': chart.chart_id, # Unique id of the report
             'createdBy': 'User1', # ID of the user who requested the report
@@ -704,10 +748,7 @@ class ReportAPI(BaseSupersetView):
                 'reportConfig': {
                     'id': chart.chart_id, # Unique id of the report
                     'queryType': druid_query.get('queryType'), # Query type of the report - groupBy, topN
-                    'dateRange': {
-                        'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear
-                        'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL
-                    },
+                    'dateRange': interval,
                     'mergeConfig': merge_config,
                     'metrics': [
                         {
@@ -826,6 +867,20 @@ class ReportAPI(BaseSupersetView):
                     "label": y_axis_label
                 }
             ],
+            "colors": [
+                {
+                    "borderColor": "rgb(0, 199, 134)",
+                    "backgroundColor": "rgb(0, 199, 134)"
+                },
+                {
+                    "borderColor": "rgb(255, 161, 29)",
+                    "backgroundColor": "rgb(255, 161, 29)"
+                },
+                {
+                    "borderColor": "rgb(255, 69, 88)",
+                    "backgroundColor": "rgb(255, 69, 88)"
+                }
+            ],
             "labelsExpr": x_axis_label,
             "chartType": chart.chart_type,
             "options": self.report_chart_option(chart),
@@ -836,6 +891,27 @@ class ReportAPI(BaseSupersetView):
                 "commonDimension": x_axis_label
             }
         }
+
+        if chart.chart_type == 'pie':
+            report_chart["colors"] = [
+                {
+                    "backgroundColor": [
+                        "rgb(54, 162, 235)",
+                        "rgb(75, 192, 192)",
+                        "rgb(201, 203, 207)",
+                        "rgb(255, 159, 64)",
+                        "rgb(153, 102, 255)",
+                        "rgb(255, 99, 132)",
+                        "rgb(192, 162, 235)",
+                        "rgb(75, 192, 54)",
+                        "rgb(201, 203, 64)",
+                        "rgb(255, 159, 207)",
+                        "rgb(153, 102, 255)",
+                        "rgb(255, 99, 5)",
+                        "rgb(255, 5, 86)"
+                    ]
+                }
+            ]
 
         return report_chart
 
@@ -882,7 +958,7 @@ class ReportAPI(BaseSupersetView):
             'showLastUpdatedOn': True
         }
 
-        if chart.chart_type in ['pie']:
+        if chart.chart_type == 'pie':
             template.pop('scales')
             template['tooltips'] = {
                 "titleSpacing": 5,

@@ -35,18 +35,25 @@ export default function PublishStatusBody ({
 
   return (
       <div>
-        { (
-            (role == "creator" && reportStatus!='draft' && !!reportStatus) || 
-            (role == "reviewer" && ['live', 'approved'].includes(reportStatus))
-          ) && (
+        { role == "creator" && !reportStatus && (
+          <Row>
+            Please add report configuration details before submit for review
+          </Row>
+        )}
+        { role == "creator" && reportStatus == 'review' && (
+          <Alert bsStyle="success">
+            Your report has been submitted for review
+          </Alert>
+        )}
+        { ['live', 'approved', 'portal_live', 'retired', 'review'].includes(reportStatus) && (
           <Row>
             <div>
-              { role == "creator" && ['review', 'approved'].includes(reportStatus) && (
+              { reportStatus == 'retired' && (
                 <Alert bsStyle="success">
-                  Your report has been submitted for review
+                  { role == 'creator' ? 'Your': 'This'} report has been retired
                 </Alert>
               )}
-              { role == "reviewer" && reportStatus == 'approved' && (
+              {/*{ role == "reviewer" && reportStatus == 'approved' && (
                 <Alert>
                   The report is successfully submitted to portal as <strong>Draft</strong>. Click on this link (
                     <a target="_blank" href={`${portalHost}/dashBoard/reports/${publishedReportId}`}>
@@ -54,10 +61,14 @@ export default function PublishStatusBody ({
                     </a>
                   ) to preview the report.
                 </Alert>
-              )}
-              { reportStatus == 'live' && (
+              )}*/}
+              { ['live', 'portal_live'].includes(reportStatus) && (
                 <Alert bsStyle="success">
-                  The report is successfully updated in portal as <strong>Draft</strong>. Click on this link(
+                  The report is successfully published in portal 
+                  { reportStatus == 'live' && (
+                    <span> as <strong>Draft</strong></span>
+                  )}
+                  . Click on this link(
                     <a target="_blank" href={`${portalHost}/dashBoard/reports/${publishedReportId}`}>
                       <u>{`${portalHost}/dashBoard/reports/${publishedReportId}`}</u>
                     </a>
@@ -67,7 +78,6 @@ export default function PublishStatusBody ({
             </div>
           </Row>
         )}
-
         { role == "creator" && reportStatus=='draft' && (
           <Row>
             Please click Save before you submit for review. Are you sure you want to submit for review?
@@ -85,11 +95,6 @@ export default function PublishStatusBody ({
                 {role=='creator' && (!submitting ? t('Submit'):t('Submitting'))}
               </Button>
             </div>
-          </Row>
-        )}
-        { role == "creator" && !reportStatus && (
-          <Row>
-            Please add report configuration details before submit for review
           </Row>
         )}
         { role == "reviewer" && (reportStatus == 'review' || reportStatus == 'approved') && (

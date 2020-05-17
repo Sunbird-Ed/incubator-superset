@@ -162,8 +162,10 @@ class ExploreViewContainer extends React.Component {
 
     let metrics = undefined
 
-    if (!!slice.form_data.metric) {
+    if (!!slice.form_data.metric && typeof(slice.form_data.metric) == 'string') {
       metrics = [{ label: "total_count", value: "total_count" }]
+    } else if(!!slice.form_data.metric && typeof(slice.form_data.metric) == 'object') {
+      metrics = [{ label: slice.form_data.metric.label, value: slice.form_data.metric.label }]
     } else {
       metrics = slice.form_data.metrics.map((metr) => {
         let value = undefined

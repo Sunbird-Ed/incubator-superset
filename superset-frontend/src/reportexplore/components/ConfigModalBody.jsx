@@ -377,7 +377,7 @@ export default function ConfigModalBody ({
                 <option value="line">Line</option>
                 <option value="bar">Bar</option>
                 <option value="pie">Pie</option>
-                <option value="column">Column</option>
+                {/*<option value="column">Column</option>*/}
                 <option value="stackedbar">Stacked bar</option>
                 <option value="horizontalBar">Bar-vertical</option>
               </ConfigInputControl>
