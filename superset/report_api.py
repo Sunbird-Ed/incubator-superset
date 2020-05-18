@@ -711,7 +711,7 @@ class ReportAPI(BaseSupersetView):
             "LastDay": {"name": "DAY", "age": 1}
         }
 
-        if chart.chart_mode == 'add' and chart.hawkeye_report.report_type == 'scheduled':
+        if chart.chart_mode == 'add':
             merge_config.update({
               "rollupRange": rollup_ages[chart.rolling_window]['age'],
               "rollupAge": rollup_ages[chart.rolling_window]['name'],
