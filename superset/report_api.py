@@ -335,7 +335,7 @@ class ReportAPI(BaseSupersetView):
 
         if report is not None:
             published_report_id = report.hawkeye_report.published_report_id
-            if published_report_id is not None and report.chart_status is not 'retired':
+            if published_report_id is not None and report.chart_status in [PORTAL_LIVE, PUBLISHED]:
                 try:
                     report_config = self.get_report_config(published_report_id)
 
