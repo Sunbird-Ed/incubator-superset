@@ -929,13 +929,15 @@ class ReportAPI(BaseSupersetView):
 
         y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
+        legend = chart.label_mapping.get('legend') if chart.label_mapping.get('legend') is not None else y_axis_label
+
         template = {
             'scales': {
                 'yAxes': [
                     {
                         'scaleLabel': {
                             'display': True,
-                            'labelString': y_axis_label
+                            'labelString': legend
                         }
                     }
                 ],
@@ -997,7 +999,7 @@ class ReportAPI(BaseSupersetView):
                         "stacked": True,
                         "scaleLabel": {
                             "display": True,
-                            "labelString": y_axis_label
+                            "labelString": legend
                         }
                     }
                 ],
