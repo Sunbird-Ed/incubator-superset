@@ -870,23 +870,28 @@ class ReportAPI(BaseSupersetView):
             "colors": [
                 {
                     "borderColor": "rgb(0, 199, 134)",
-                    "backgroundColor": "rgba(0, 199, 134, 0.2)"
+                    "backgroundColor": "rgba(0, 199, 134, 0.2)",
+                    "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(255, 161, 29)",
-                    "backgroundColor": "rgba(255, 161, 29, 0.2)"
+                    "backgroundColor": "rgba(255, 161, 29, 0.2)",
+                    "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(255, 69, 88)",
-                    "backgroundColor": "rgba(255, 69, 88, 0.2)"
+                    "backgroundColor": "rgba(255, 69, 88, 0.2)",
+                    "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(242, 203, 28)",
-                    "backgroundColor": "rgba(242, 203, 28, 0.2)"
+                    "backgroundColor": "rgba(242, 203, 28, 0.2)",
+                    "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(55, 70, 73)",
-                    "backgroundColor": "rgba(55, 70, 73, 0.2)"
+                    "backgroundColor": "rgba(55, 70, 73, 0.2)",
+                    "borderWidth": 2
                 }
             ],
             "labelsExpr": x_axis_label,
