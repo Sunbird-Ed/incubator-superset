@@ -488,10 +488,10 @@ class ReportAPI(BaseSupersetView):
 
             job_config['description'] = chart.hawkeye_report.report_description
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
-            job_config['config']['reportConfig']['dateRange'] = {
-                'staticInterval': chart.rolling_window,
-                'granularity': chart.chart_granularity.lower()
-            }
+            # job_config['config']['reportConfig']['dateRange'] = {
+            #     'staticInterval': chart.rolling_window,
+            #     'granularity': chart.chart_granularity.lower()
+            # }
             job_config['createdBy'] = 'User1'
 
         creation_in_process = True
