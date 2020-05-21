@@ -421,20 +421,6 @@ class ReportAPI(BaseSupersetView):
         counter = 0
         while counter <= 5:
             try:
-                print("Retrying for publish_report_portal :: {}".format(counter))
-                report_id = self.publish_report_portal(chart)
-                break;
-            except Exception as e:
-                print(str(e))
-                counter += 1;
-                sleep(2)
-        else:
-            print("Max retries reached... publish_report_portal")
-            publish_success = False
-
-        counter = 0
-        while counter <= 5 and publish_success:
-            try:
                 print("Retrying for publish_job_analytics :: {}".format(counter))
                 self.publish_job_analytics(chart)
                 break;
@@ -444,6 +430,20 @@ class ReportAPI(BaseSupersetView):
                 sleep(2)
         else:
             print("Max retries reached... publish_job_analytics")
+            publish_success = False
+
+        counter = 0
+        while counter <= 5 and publish_success:
+            try:
+                print("Retrying for publish_report_portal :: {}".format(counter))
+                report_id = self.publish_report_portal(chart)
+                break;
+            except Exception as e:
+                print(str(e))
+                counter += 1;
+                sleep(2)
+        else:
+            print("Max retries reached... publish_report_portal")
             publish_success = False
 
         if publish_success:
