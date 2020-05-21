@@ -60,6 +60,7 @@ export default class PublishChartButton extends React.Component {
       toasts: [],
       isNewReport: true,
       isNewChart: true,
+      staticInterval: true,
       reportStatus: '',
       reportName: '',
       reportDescription: '',
@@ -149,11 +150,13 @@ export default class PublishChartButton extends React.Component {
       additionalChanges.reportDescription = report.reportDescription
       additionalChanges.reportType = report.reportType
       additionalChanges.reportFrequency = report.reportFrequency
+      additionalChanges.staticInterval = report.staticInterval
     } else if (fieldType == "report") {
       additionalChanges.reportName = ""
       additionalChanges.reportDescription = ""
       additionalChanges.reportType = ""
       additionalChanges.reportFrequency = ""
+      additionalChanges.staticInterval = false
     } else if (fieldType == "chart" && !!value) {
       let chart = this.state.chartList.find(x => x.chartId == value)
 
@@ -282,6 +285,7 @@ export default class PublishChartButton extends React.Component {
     let reportParams = {
       isNewReport: this.state.isNewReport,
       isNewChart: this.state.isNewChart,
+      staticInterval: this.state.staticInterval,
       reportId: this.state.reportId,
       reportName: this.state.reportName,
       reportDescription: this.state.reportDescription,

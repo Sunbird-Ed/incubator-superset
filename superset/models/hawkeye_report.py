@@ -25,6 +25,7 @@ class HawkeyeReport(
     report_status = Column(String(100))
     published_report_id = Column(String(250))
     published_report_status = Column(String(250))
+    static_interval = Column(Boolean)
     # report_granularity = Column(String(250))
 
     @property
@@ -43,5 +44,6 @@ class HawkeyeReport(
             'reportSummary': self.report_summary,
             'reportType': self.report_type,
             'reportFrequency': self.report_frequency,
+            'staticInterval': self.static_interval if self.static_interval is not None else False,
             'charts': associated_charts
         }

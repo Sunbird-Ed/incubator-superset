@@ -67,6 +67,7 @@ class HawkeyeChart(
             "reportType": self.hawkeye_report.report_type,
             "reportFrequency": self.hawkeye_report.report_frequency,
             "publishedReportId": self.hawkeye_report.published_report_id,
+            "staticInterval": self.hawkeye_report.static_interval if self.hawkeye_report.static_interval is not None else False,
 
             "chartId": self.chart_id,
             "chartName": self.chart_name,

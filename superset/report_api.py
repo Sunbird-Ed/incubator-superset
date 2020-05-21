@@ -256,6 +256,7 @@ class ReportAPI(BaseSupersetView):
         report.report_summary = form_data["reportSummary"]
         report.report_type = form_data["reportType"]
         report.report_frequency = form_data["reportFrequency"]
+        report.static_interval = form_data["staticInterval"]
         if report.id:
             self.overwrite_record(report)
         else:
@@ -721,7 +722,7 @@ class ReportAPI(BaseSupersetView):
               "rollup": 1
             })
 
-        if chart.hawkeye_report.report_type == 'scheduled':
+        if chart.hawkeye_report.report_type == 'scheduled' and not chart.hawkeye_report.static_interval:
             interval = {
                 'staticInterval': chart.rolling_window, # One of LastDay, LastMonth, Last7Days, Last30Days, LastWeek, YTD, AcademicYear,
                 'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL

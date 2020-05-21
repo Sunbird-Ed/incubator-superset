@@ -9,6 +9,7 @@ import {
   FormGroup,
   Badge,
   Radio,
+  Checkbox,
   Panel
 } from 'react-bootstrap';
 
@@ -34,6 +35,7 @@ export default function ConfigModalBody ({
     description,
     isNewReport,
     isNewChart,
+    staticInterval,
     reportList,
     chartList,
     dimensionsList,
@@ -177,6 +179,20 @@ export default function ConfigModalBody ({
                 />
               </FormGroup>
             </Col>*/}
+          </Row>
+          <Row>
+            <Col md={6}>
+              <Checkbox
+                fieldName="staticInterval"
+                disabled={fieldDisabled}
+                checked={staticInterval}
+                onChange={(e) => {methods.handleInputChange({currentTarget: {value: e.currentTarget.checked, name: 'staticInterval'}})}}
+              >
+                Static Date Range
+              </Checkbox>
+            </Col>
+          </Row>
+          <Row>
             <Col md={6}>
               <ConfigInputControl
                 inputType="select"
