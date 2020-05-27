@@ -163,7 +163,8 @@ class ExploreViewContainer extends React.Component {
     let metrics = undefined
 
     if (!!slice.form_data.metric && typeof(slice.form_data.metric) == 'string') {
-      metrics = [{ label: "total_count", value: "total_count" }]
+      let met = slice.form_data.metric == "count" ? "total_count" : slice.form_data.metric
+      metrics = [{ label: met, value: met }]
     } else if(!!slice.form_data.metric && typeof(slice.form_data.metric) == 'object') {
       metrics = [{ label: slice.form_data.metric.label, value: slice.form_data.metric.label }]
     } else {
@@ -172,7 +173,8 @@ class ExploreViewContainer extends React.Component {
         if(typeof(metr) == "object") {
           value = { label: metr.label, value: metr.label }
         } else {
-          value = { label: "total_count", value: "total_count" }
+          let met = metr == "count" ? "total_count" : metr
+          value = { label: met, value: met }
         }
         return value
       })

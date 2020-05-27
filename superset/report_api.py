@@ -667,18 +667,68 @@ class ReportAPI(BaseSupersetView):
 
         if druid_query.get('aggregations'):
             for i, aggregation in enumerate(druid_query['aggregations']):
-                if aggregation['name'] == 'count':
+                aggr_name = chart.label_mapping[aggregation['name']] \
+                            if chart.label_mapping.get(aggregation['name']) else \
+                            aggregation['name']
+                if aggregation['name'] == 'count' and aggregation['type'] != 'javascript':
                     druid_query['aggregations'][i] = {
-                        'name': chart.label_mapping[chart.y_axis_label],
+                        'name': chart.label_mapping['total_count'],
                         'type': 'count',
                         'fieldName': 'count'
                     }
+                elif aggregation['type'] == 'javascript':
+                    druid_query['aggregations'][i]['name'] = aggr_name
+                    druid_query['aggregations'][i]['fieldName'] = aggregation['fieldNames'][0]
+                    druid_query['aggregations'][i].pop('fieldNames')
                 else:
                     druid_query['aggregations'][i].update({
-                        'name': chart.label_mapping[chart.y_axis_label]
+                        'name': aggr_name
                     })
                     if druid_query['aggregations'][i].get('fieldNames'):
                         druid_query['aggregations'][i].pop('fieldNames')
+
+        if druid_query.get('postAggregations'):
+            druid_query['postAggregation'] = druid_query.pop('postAggregations')
+        elif druid_query.get('postAggregation'):
+            druid_query['postAggregation'] = deepcopy([druid_query['postAggregation']])
+
+        if druid_query.get('postAggregation'):
+            for i, aggregation in enumerate(druid_query['postAggregation']):
+
+                druid_query['postAggregation'][i]['name'] = chart.label_mapping[chart.y_axis_label]
+                if aggregation['type'] == 'javascript':
+                    aggr_name_left = chart.label_mapping[aggregation['fieldNames'][0]] \
+                                if chart.label_mapping.get(aggregation['fieldNames'][0]) else \
+                                aggregation['fieldNames'][0]
+
+                    aggr_name_right = chart.label_mapping[aggregation['fieldNames'][1]] \
+                                if chart.label_mapping.get(aggregation['fieldNames'][1]) else \
+                                aggregation['fieldNames'][1]
+                    druid_query['postAggregation'][i]['fn'] = druid_query['postAggregation'][i].pop('function')
+                    druid_query['postAggregation'][i]['fields'] = {
+                        'leftField': aggr_name_left,
+                        'rightField': aggr_name_right,
+                        'rightFieldType': 'fieldAccess'
+                    }
+                    druid_query['postAggregation'][i].pop('fieldNames')
+                else:
+                    fields = deepcopy(aggregation['fields'])
+                    aggr_name_left = chart.label_mapping[fields[0]['fieldName']] \
+                                if chart.label_mapping.get(fields[0]['fieldName']) else \
+                                fields[0]['fieldName']
+
+                    if fields[1]['type'] is 'fieldAccess':
+                        aggr_name_right = chart.label_mapping[fields[1]['fieldName']] \
+                                if chart.label_mapping.get(fields[1]['fieldName']) else \
+                                fields[1]['fieldName']
+
+                    druid_query['postAggregation'][i]['fields'] = {
+                        'leftField': aggr_name_left,
+                        'rightField': aggr_name_right if fields[1]['type'] is 'fieldAccess' else fields[1]['value'],
+                        'rightFieldType': 'FieldAccess' if fields[1]['type'] is 'fieldAccess' else 'constant'
+                    }
+
+
 
         if druid_query.get('metric'):
             druid_query.pop('metric')
@@ -935,7 +985,7 @@ class ReportAPI(BaseSupersetView):
 
         y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
-        legend = chart.label_mapping.get('legend') if chart.label_mapping.get('legend') is not None else y_axis_label
+        legend = chart.label_mapping.get('legend') if chart.label_mapping.get('legend') else y_axis_label
 
         template = {
             'scales': {
