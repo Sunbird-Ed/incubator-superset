@@ -36,6 +36,9 @@ export default function ConfigModalBody ({
     isNewReport,
     isNewChart,
     staticInterval,
+    showPercentage,
+    showTopRecords,
+    noOfTopRecords,
     reportList,
     chartList,
     dimensionsList,
@@ -379,6 +382,8 @@ export default function ConfigModalBody ({
                 {/*<option value="6months">6 months</option>*/}
               </ConfigInputControl>
             </Col>
+          </Row>
+          <Row>
             <Col md={6}>
               <ConfigInputControl
                 inputType="select"
@@ -413,6 +418,45 @@ export default function ConfigModalBody ({
                 <option value="add">Add</option>
               </ConfigInputControl>
             </Col>
+          </Row>
+          { chartType == 'pie' && (
+            <Row>
+              <Col md={6}>
+                <Checkbox
+                  fieldName="showPercentage"
+                  disabled={fieldDisabled}
+                  checked={showPercentage}
+                  onChange={(e) => {methods.handleInputChange({currentTarget: {value: e.currentTarget.checked, name: 'showPercentage'}})}}
+                >
+                  Show percentage
+                </Checkbox>
+              </Col>
+              <Col md={6}>
+                <Checkbox
+                  fieldName="showTopRecords"
+                  disabled={fieldDisabled}
+                  checked={showTopRecords}
+                  onChange={(e) => {methods.handleInputChange({currentTarget: {value: e.currentTarget.checked, name: 'showTopRecords'}})}}
+                >
+                  Show top n records
+                </Checkbox>
+                { showTopRecords && (
+                  <Col md={6}>
+                    <ConfigInputControl
+                      inputType="number"
+                      fieldName="noOfTopRecords"
+                      placeholder="No of Records"
+                      validation={validations["noOfTopRecords"]}
+                      onChange={methods.handleInputChange}
+                      disabled={fieldDisabled}
+                      value={noOfTopRecords}
+                    />
+                  </Col>
+                )}
+              </Col>
+            </Row>
+          )}
+          <Row>
             <Col md={6}>
               <ConfigInputControl
                 inputType="select"

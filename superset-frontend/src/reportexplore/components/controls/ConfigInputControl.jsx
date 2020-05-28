@@ -61,15 +61,17 @@ export default class ConfigInputControl extends React.Component {
 
     return (
       <FormGroup validationState={!!validation ? "error": null}>
-        <label className="control-label" htmlFor={fieldName}>
-          {title}
-        </label>
-        {inputType=="text" && (
+        { !!title && (
+          <label className="control-label" htmlFor={fieldName}>
+            {title}
+          </label>
+        )}
+        {(inputType=="text" || inputType=="number") && (
           <FormControl
             disabled={disabled}
             name={fieldName}
             placeholder={placeholder}
-            type="text"
+            type={inputType}
             bsSize="sm"
             value={value}
             onChange={event => onChange(event)}

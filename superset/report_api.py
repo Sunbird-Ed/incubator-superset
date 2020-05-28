@@ -4,6 +4,7 @@ import os
 import requests as http_client
 
 from time import sleep
+from datetime import datetime
 from flask_appbuilder.security.decorators import has_access, has_access_api
 from flask_appbuilder import expose
 from flask import request, g, flash
@@ -272,6 +273,9 @@ class ReportAPI(BaseSupersetView):
         chart.chart_granularity = form_data["chartGranularity"]
         chart.rolling_window = form_data["rollingWindow"]
         chart.chart_type = form_data["chartType"]
+        chart.show_percentage = form_data["showPercentage"]
+        chart.show_top_records = form_data["showTopRecords"]
+        chart.top_n_records = form_data["noOfTopRecords"]
         chart.chart_mode = form_data["chartMode"]
         chart.x_axis_label = form_data["xAxisLabel"]
         chart.y_axis_label = form_data["yAxisLabel"]
@@ -528,7 +532,7 @@ class ReportAPI(BaseSupersetView):
                 "path": "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
             })
         else:
-            charts = [c for c in filter(lambda x: x['chartId'] == chart.chart_id, report_config['reportconfig']['charts'])]
+            charts = [c for c in filter(lambda x: x['id'] == chart.chart_id, report_config['reportconfig']['charts'])]
             chart_config = charts[0]
 
             y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
@@ -539,7 +543,7 @@ class ReportAPI(BaseSupersetView):
             })
 
             for i, x in enumerate(report_config['reportconfig']['charts']):
-                if x['chartId'] == chart.chart_id:
+                if x['id'] == chart.chart_id:
                     report_config['reportconfig']['charts'][i] = chart_config
 
         report_id = self.post_report_config(report_config, published_report_id)
@@ -787,6 +791,13 @@ class ReportAPI(BaseSupersetView):
                 },
                 'granularity': chart.chart_granularity.lower() # Granularity of the report - DAY, WEEK, MONTH, ALL
             }
+            if chart.chart_mode == 'add':
+                from_date = datetime.strptime(start_date.split("T")[0], "%Y-%m-%d")
+                to_date = datetime.strptime(end_date.split("T")[0], "%Y-%m-%d")
+                merge_config.update({
+                    "rollupRange": (to_date - from_date).days,
+                    "rollupAge": "DAY"
+                })
 
         druid_query = self.generate_druid_query(chart, deepcopy(chart.druid_query))
 
@@ -911,7 +922,7 @@ class ReportAPI(BaseSupersetView):
         y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
         report_chart = {
-            "chartId": chart.chart_id,
+            "id": chart.chart_id,
             "datasets": [
                 {
                     "dataExpr": y_axis_label,
@@ -921,27 +932,27 @@ class ReportAPI(BaseSupersetView):
             "colors": [
                 {
                     "borderColor": "rgb(0, 199, 134)",
-                    "backgroundColor": "rgba(0, 199, 134, 0.2)",
+                    "backgroundColor": "rgba(0, 199, 134, 0.3)",
                     "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(255, 161, 29)",
-                    "backgroundColor": "rgba(255, 161, 29, 0.2)",
+                    "backgroundColor": "rgba(255, 161, 29, 0.3)",
                     "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(255, 69, 88)",
-                    "backgroundColor": "rgba(255, 69, 88, 0.2)",
+                    "backgroundColor": "rgba(255, 69, 88, 0.3)",
                     "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(242, 203, 28)",
-                    "backgroundColor": "rgba(242, 203, 28, 0.2)",
+                    "backgroundColor": "rgba(242, 203, 28, 0.3)",
                     "borderWidth": 2
                 },
                 {
                     "borderColor": "rgb(55, 70, 73)",
-                    "backgroundColor": "rgba(55, 70, 73, 0.2)",
+                    "backgroundColor": "rgba(55, 70, 73, 0.3)",
                     "borderWidth": 2
                 }
             ],
@@ -957,25 +968,13 @@ class ReportAPI(BaseSupersetView):
         }
 
         if chart.chart_type == 'pie':
-            report_chart["colors"] = [
-                {
-                    "backgroundColor": [
-                        "rgb(54, 162, 235)",
-                        "rgb(75, 192, 192)",
-                        "rgb(201, 203, 207)",
-                        "rgb(255, 159, 64)",
-                        "rgb(153, 102, 255)",
-                        "rgb(255, 99, 132)",
-                        "rgb(192, 162, 235)",
-                        "rgb(75, 192, 54)",
-                        "rgb(201, 203, 64)",
-                        "rgb(255, 159, 207)",
-                        "rgb(153, 102, 255)",
-                        "rgb(255, 99, 5)",
-                        "rgb(255, 5, 86)"
-                    ]
-                }
-            ]
+            report_chart.pop('colors')
+
+            if chart.show_top_records and chart.top_n_records is not None:
+                template['datasets'][0]['top'] = chart.top_n_records
+        elif chart.chart_type == 'line':
+            for i,x in enumerate(report_chart['colors']):
+                report_chart['colors'][i]['backgroundColor'] = 'rgba(242, 203, 28, 0)'
 
         return report_chart
 
@@ -1024,12 +1023,20 @@ class ReportAPI(BaseSupersetView):
             'showLastUpdatedOn': True
         }
 
+        if chart.chart_mode != 'add':
+            template['scales']['xAxes'][0]['ticks'] = {
+                'autoSkip': False
+            }
+
         if chart.chart_type == 'pie':
             template.pop('scales')
             template['tooltips'] = {
                 "titleSpacing": 5,
                 "bodySpacing": 5
             }
+            template['legend']['display'] = True
+            if chart.show_percentage:
+                template['showPercentage'] = True
         elif chart.chart_type == 'horizontalBar':
             template['scales'] = {
                 "xAxes": [

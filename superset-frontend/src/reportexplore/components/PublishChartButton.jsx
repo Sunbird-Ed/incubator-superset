@@ -61,6 +61,9 @@ export default class PublishChartButton extends React.Component {
       isNewReport: true,
       isNewChart: true,
       staticInterval: true,
+      showPercentage: false,
+      showTopRecords: false,
+      noOfTopRecords: 10,
       reportStatus: '',
       reportName: '',
       reportDescription: '',
@@ -259,11 +262,15 @@ export default class PublishChartButton extends React.Component {
       "reportId","reportName","reportDescription","reportType",
       "reportFrequency","chartId","chartName","chartDescription",
       "chartGranularity","rollingWindow","chartType","chartMode","xAxisLabel",
-      "yAxisLabel","labelMapping"
+      "yAxisLabel","labelMapping", "noOfTopRecords"
     ]
 
     if (this.state.reportType == 'one-time') {
       configs.splice(configs.indexOf("reportFrequency"), 1)
+    }
+
+    if (!this.state.showTopRecords) {
+      configs.splice(configs.indexOf("noOfTopRecords"), 1)
     }
     if (this.state.isNewReport) {
       configs.splice(configs.indexOf("reportId"), 1)
@@ -299,6 +306,9 @@ export default class PublishChartButton extends React.Component {
       chartGranularity: this.state.chartGranularity,
       rollingWindow: this.state.rollingWindow,
       chartType: this.state.chartType,
+      showPercentage: this.state.showPercentage,
+      showTopRecords: this.state.showTopRecords,
+      noOfTopRecords: this.state.noOfTopRecords,
       chartMode: this.state.chartMode,
       xAxisLabel: this.state.xAxisLabel,
       yAxisLabel: this.state.yAxisLabel,

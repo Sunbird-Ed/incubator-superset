@@ -29,6 +29,9 @@ class HawkeyeChart(
     chart_granularity = Column(String(250))
     rolling_window = Column(String(250))
     chart_type = Column(String(250))
+    show_percentage = Column(Boolean)
+    show_top_records = Column(Boolean)
+    top_n_records = Column(Integer)
     chart_mode = Column(String(250))
     x_axis_label = Column(String(250))
     y_axis_label = Column(String(250))
@@ -76,6 +79,9 @@ class HawkeyeChart(
             "chartGranularity": self.chart_granularity,
             "rollingWindow": self.rolling_window,
             "chartType": self.chart_type,
+            "showPercentage": self.show_percentage,
+            "showTopRecords": self.show_top_records,
+            "noOfTopRecords": self.top_n_records,
             "chartMode": self.chart_mode,
             "xAxisLabel": self.x_axis_label,
             "yAxisLabel": self.y_axis_label,
