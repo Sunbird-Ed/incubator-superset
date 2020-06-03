@@ -640,16 +640,25 @@ class ReportAPI(BaseSupersetView):
 
         if druid_query.get('dimension'):
             query_dims = druid_query.pop('dimension')
-            druid_query['dimensions'] = [{
-                'fieldName': query_dims,
-                'aliasName': chart.label_mapping[query_dims]
-            }]
-        elif druid_query.get('dimensions'):
+            druid_query['dimensions'] = [deepcopy(query_dims)]
+
+        if druid_query.get('dimensions'):
             query_dims = druid_query.pop('dimensions')
-            druid_query['dimensions'] = [{
-                'fieldName': item,
-                'aliasName': chart.label_mapping[item]
-            } for item in query_dims]
+            druid_query['dimensions'] = []
+            for dim in query_dims:
+                if isinstance(dim, dict):
+                    dim['fieldName'] = dim.pop('dimension')
+                    dim['aliasName'] = dim.pop('outputName')
+                    if dim['extractionFn'].get('lookup'):
+                        dim['extractionFn']['fn'] = dim['extractionFn'].pop('lookup')
+                    else:
+                        dim['extractionFn']['fn'] = dim['extractionFn'].pop('function')
+                    druid_query['dimensions'].append(deepcopy(dim))
+                else:
+                    druid_query['dimensions'].append({
+                        'fieldName': dim,
+                        'aliasName': chart.label_mapping[dim]
+                    })
 
         if druid_query.get('filter') is not None:
             druid_query['filters'] = druid_query.pop('filter')
@@ -898,7 +907,7 @@ class ReportAPI(BaseSupersetView):
                 "startdate": "12-02-2020",
                 "enddate": "12-02-2020"
             },
-            "reportgenerateddate": "12-02-2020",
+            "reportgenerateddate": datetime.now().strftime("%d/%m/%Y"),
             "reportconfig": {
                 "label": chart.hawkeye_report.report_name,
                 "title": chart.hawkeye_report.report_name,
