@@ -72,7 +72,7 @@ export default function ConfigModalBody ({
     invalidFields
   } = configData;
 
-  let fieldDisabled = reportStatus != 'draft' && !!reportStatus
+  let fieldDisabled = reportStatus != 'draft' && reportStatus != 'rejected' && !!reportStatus
 
   return (
     <div className="config-modal-body">
@@ -527,8 +527,7 @@ export default function ConfigModalBody ({
           </Row>
         </Panel.Body>
       </Panel>*/}
-
-      {role == 'creator' && (reportStatus == 'draft' || !reportStatus) && (
+      {role == 'creator' && (reportStatus == 'rejected' || reportStatus == 'draft' || !reportStatus) && (
         <Button
           onClick={() => methods.updateChart()}
           type="button"

@@ -54,6 +54,7 @@ export default class PublishChartButton extends React.Component {
 
     this.state = {
       submitting: false,
+      rejectPanelIsSelected: false,
       reportList: [],
       chartList: [],
       dimensionsList: [],
@@ -86,6 +87,7 @@ export default class PublishChartButton extends React.Component {
       reportType: '',
       reportGranularity: '',
       labelMapping: '{}',
+      comments: '',
       confirmationPopupTitle: "",
       metricOptions: [{label: "Count", value: "count"}, {label: "Count Distinct", value: "countDistinct"}],
       dimensions: [],
@@ -370,6 +372,31 @@ export default class PublishChartButton extends React.Component {
     });
   }
 
+  rejectChart = () => {
+    this.setState({ submitting: true });
+
+    let url = '/reportapi/reject_report'
+    let reportParams = { sliceId: this.props.slice.slice_id, comments: this.state.comments };
+
+    SupersetClient.post({ url, postPayload: { form_data: reportParams } }).then(({ json }) => {
+      this.setState({
+        reportStatus: json.report_status,
+        submitting: false
+      })
+      console.log("Successfully Rejected")
+    })
+    .catch(() => {
+      let toasts = [{
+        id: "sample",
+        toastType: "DANGER_TOAST",
+        text: "<h5>Report Rejection is failed</h5>",
+        duration: 3000
+      }]
+      this.setState({ submitting: false, toasts })
+      console.log("Reject failed::Submission")
+    });
+  }
+
   renderQueryModalBody(){
     const { role } = this.props
 
@@ -395,8 +422,12 @@ export default class PublishChartButton extends React.Component {
         role={this.props.role}
         reportStatus={this.state.reportStatus}
         publishChart={this.publishChart}
+        rejectChart={this.rejectChart}
         publishedReportId={this.state.publishedReportId}
         portalHost={this.state.portalHost}
+        comments={this.state.comments}
+        handleInputChange={this.handleInputChange}
+        rejectPanelIsSelected={this.state.rejectPanelIsSelected}
       />
     )
   }

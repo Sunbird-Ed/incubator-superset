@@ -21,7 +21,11 @@ const propTypes = {
   reportStatus: PropTypes.string,
   publishedReportId: PropTypes.string,
   portalHost: PropTypes.string,
-  submitting: PropTypes.bool
+  submitting: PropTypes.bool,
+  rejectPanelIsSelected: PropTypes.bool,
+  handleInputChange: PropTypes.func,
+  rejectChart: PropTypes.func,
+  comments: PropTypes.string
 }
 
 export default function PublishStatusBody ({
@@ -30,7 +34,11 @@ export default function PublishStatusBody ({
   reportStatus,
   publishedReportId,
   portalHost,
-  submitting
+  submitting,
+  rejectPanelIsSelected,
+  handleInputChange,
+  rejectChart,
+  comments
 }) {
 
   return (
@@ -78,7 +86,7 @@ export default function PublishStatusBody ({
             </div>
           </Row>
         )}
-        { role == "creator" && reportStatus=='draft' && (
+        { role == "creator" && (reportStatus=='draft' || reportStatus=='rejected') && (
           <Row>
             Please click Save before you submit for review. Are you sure you want to submit for review?
             <br/>
@@ -97,7 +105,7 @@ export default function PublishStatusBody ({
             </div>
           </Row>
         )}
-        { role == "reviewer" && (reportStatus == 'review' || reportStatus == 'approved') && (
+        { role == "reviewer" && (reportStatus == 'review' || reportStatus == 'approved') && !rejectPanelIsSelected && (
           <Row>
             Are you sure you want to
             {
@@ -114,11 +122,77 @@ export default function PublishStatusBody ({
                 className="m-r-5"
                 disabled={submitting}
               >
-                {reportStatus=='review' && (!submitting ? t('Publish'):t('Publishing'))}
-                {reportStatus=='approved' && (!submitting ? t('Publish'):t('Publishing'))}
+                {!submitting ? t('Publish'):t('Publishing')}
+              </Button>{'   '} or {'   '}
+              <Button
+                onClick={
+                  (e) => {
+                    handleInputChange({currentTarget: {value: true, name: 'rejectPanelIsSelected'}});
+                    handleInputChange({currentTarget: {value: '', name: 'comments'}})
+                  }
+                }
+                type="button"
+                bsSize="sm"
+                bsStyle="warning"
+                className="m-r-5"
+              >
+                Reject and Add comments
               </Button>
             </div>
           </Row>
+        )}
+        { ((role == "reviewer" && (rejectPanelIsSelected || reportStatus == 'rejected')) ||
+          (role == "creator" && reportStatus == 'rejected')) && (
+          <div>
+            <Row>
+              { reportStatus == 'rejected' && (
+                <div>
+                  <br/>
+                  Rejected with the following comments
+                  <br/>
+                  <br/>
+                </div>
+              )}
+              <FormGroup>
+                <FormControl
+                  disabled={submitting || reportStatus == 'rejected'}
+                  name={'comments'}
+                  placeholder={'Enter review comments'}
+                  type="text"
+                  componentClass="textarea"
+                  bsSize="sm"
+                  value={comments}
+                  onChange={handleInputChange}
+                  style={{ maxWidth: '100%', height: '100px' }}
+                />
+              </FormGroup>
+            </Row>
+            { reportStatus != 'rejected' && (
+              <Row>
+                <Button
+                  onClick={rejectChart}
+                  type="button"
+                  bsSize="sm"
+                  bsStyle="primary"
+                  className="m-r-5"
+                  disabled={submitting}
+                >
+                  {!submitting ? t('Reject'):t('Rejecting')}
+                </Button>
+                <Button
+                  onClick={
+                    (e) => {handleInputChange({currentTarget: {value: false, name: 'rejectPanelIsSelected'}})}
+                  }
+                  type="button"
+                  bsSize="sm"
+                  bsStyle="warning"
+                  className="m-r-5"
+                >
+                  Cancel
+                </Button>
+              </Row>
+            )}
+          </div>
         )}
         <br/>
       </div>

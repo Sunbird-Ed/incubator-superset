@@ -54,6 +54,7 @@ DRAFT = "draft"
 PUBLISHED = "live"
 PORTAL_LIVE = "portal_live"
 RETIRED = "retired"
+REJECTED = "rejected"
 
 
 def is_owner(obj, user):
@@ -378,6 +379,44 @@ class ReportAPI(BaseSupersetView):
     @has_access_api
     @handle_api_exception
     @expose(
+        "/reject_report", methods=["POST"]
+    )
+    def reject_report(self, slice_id=None):
+        form_data = json.loads(request.form.get("form_data"))
+        user_id = g.user.get_id() if g.user else None
+        slice_id = form_data.get("sliceId")
+        slc = db.session.query(Slice).filter_by(id=slice_id).one_or_none()
+
+        if not security_manager.can_access("can_reject_report", "ReportAPI"):
+            return json_error_response(
+                _("You don't have the rights to ") + _("reject this ") + _("report"),
+                status=400,
+            )
+
+        chart = db.session.query(HawkeyeChart).filter_by(slice_id=slice_id).one_or_none()
+
+        if not chart or (chart.chart_status != REVIEW):
+            return json_error_response(
+                _("Report is not submitted for review yet"),
+                status=400,
+            )
+
+        chart.comments = form_data['comments']
+        chart.chart_status = REJECTED
+
+        self.overwrite_record(chart)
+
+        return json_success(json.dumps({
+                "status": "SUCCESS",
+                "report_status": REJECTED
+            }))
+
+
+    @event_logger.log_this
+    @api
+    @has_access_api
+    @handle_api_exception
+    @expose(
         "/publish_report", methods=["POST"]
     )
     def publish_report(self, slice_id=None):
@@ -388,7 +427,7 @@ class ReportAPI(BaseSupersetView):
 
         if not security_manager.can_access("can_publish_report", "ReportAPI"):
             return json_error_response(
-                _("You don't have the rights to ") + _("alter this ") + _("report"),
+                _("You don't have the rights to ") + _("publish this ") + _("report"),
                 status=400,
             )
 
@@ -457,7 +496,6 @@ class ReportAPI(BaseSupersetView):
 
             self.overwrite_record(chart)
 
-        if publish_success:
             return json_success(json.dumps({
                 "status": "SUCCESS",
                 "report_status": chart.chart_status,
@@ -740,8 +778,6 @@ class ReportAPI(BaseSupersetView):
                         'rightField': aggr_name_right if fields[1]['type'] is 'fieldAccess' else fields[1]['value'],
                         'rightFieldType': 'FieldAccess' if fields[1]['type'] is 'fieldAccess' else 'constant'
                     }
-
-
 
         if druid_query.get('metric'):
             druid_query.pop('metric')

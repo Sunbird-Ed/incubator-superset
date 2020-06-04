@@ -39,6 +39,7 @@ class HawkeyeChart(
     dimensions = Column(String(250))
     druid_query = Column(JSON)
     submitted_as_job = Column(Boolean)
+    comments = Column(Text)
 
     chart_status = Column(String(100))
     created_by = Column(String(100))
@@ -73,6 +74,7 @@ class HawkeyeChart(
             "staticInterval": self.hawkeye_report.static_interval if self.hawkeye_report.static_interval is not None else False,
 
             "chartId": self.chart_id,
+            "comments": self.comments,
             "chartName": self.chart_name,
             "chartDescription": self.chart_description,
             "chartSummary": self.chart_summary,
