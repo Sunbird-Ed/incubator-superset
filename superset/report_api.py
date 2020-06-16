@@ -341,7 +341,7 @@ class ReportAPI(BaseSupersetView):
 
         if report is not None:
             published_report_id = report.hawkeye_report.published_report_id
-            if published_report_id is not None and report.chart_status in [PORTAL_LIVE, PUBLISHED]:
+            if published_report_id is not None and report.chart_status in [PORTAL_LIVE, PUBLISHED, RETIRED]:
                 try:
                     report_config = self.get_report_config(published_report_id)
 
@@ -531,20 +531,46 @@ class ReportAPI(BaseSupersetView):
 
             job_config['description'] = chart.hawkeye_report.report_description
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
-            # job_config['config']['reportConfig']['dateRange'] = {
-            #     'staticInterval': chart.rolling_window,
-            #     'granularity': chart.chart_granularity.lower()
-            # }
             job_config['createdBy'] = 'User1'
 
-        creation_in_process = True
+        if job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
+           job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
+           chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
+           job_config['reportSchedule'] = 'ONCE'
 
         response = self.post_job_config(job_config, chart)
-        if response['params'].get('errmsg') is not None and 'already' in response['params'].get('errmsg'):
-            chart.chart_id += '_1'
-            self.publish_job_analytics(chart)
-        elif response['params'].get('errmsg') is not None:
+        if response['params'].get('errmsg') is not None:
+            if 'already' in response['params'].get('errmsg'):
+                chart.chart_id += '_new'
+                self.publish_job_analytics(chart)
+                return False
             raise Exception('ERROR::Creation or updation of job config')
+            return False
+
+        if job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
+           job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
+           chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
+
+            chart.chart_id += '_cumulative'
+            job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
+            job_config['reportId'] = chart.chart_id
+            job_config['config']['reportConfig']['id'] = chart.chart_id
+            job_config['config']['reportConfig']['dateRange'] = {
+                'staticInterval': chart.rolling_window,
+                'granularity': chart.chart_granularity.lower()
+            }
+            counter = 0
+            while counter <= 5:
+                try:
+                    print("Retrying for post_job_config:: {}".format(counter))
+                    self.post_job_config(job_config, chart)
+                    break
+                except Exception as e:
+                    print('ERROR::post_job_config')
+                    counter += 1
+                    sleep(2)
+            else:
+                raise Exception('ERROR::post_job_config')
 
 
     def publish_report_portal(self, chart):
@@ -798,6 +824,7 @@ class ReportAPI(BaseSupersetView):
           "basePath": "/mount/data/analytics/tmp",
           "reportPath": "{}.csv".format(chart.chart_id),
           "container": "reports",
+          "postContainer": "reports",
           "rollup": 0
         }
 
@@ -919,7 +946,6 @@ class ReportAPI(BaseSupersetView):
         }
 
         response = http_client.request(method, url, headers=headers, data=json.dumps(report_config))
-
         report_id = response.json()['result']['reportId']
         
         return report_id
@@ -943,17 +969,12 @@ class ReportAPI(BaseSupersetView):
                 "startdate": "12-02-2020",
                 "enddate": "12-02-2020"
             },
-            "reportgenerateddate": datetime.now().strftime("%d/%m/%Y"),
+            "reportgenerateddate": datetime.utcnow().ctime(),
             "reportconfig": {
                 "label": chart.hawkeye_report.report_name,
                 "title": chart.hawkeye_report.report_name,
                 "description": chart.hawkeye_report.report_description,
-                "dataSource": [
-                    {
-                        "id": chart.chart_id,
-                        "path": "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
-                    }
-                ],
+                "dataSource": [],
                 "charts": []
             }
         }

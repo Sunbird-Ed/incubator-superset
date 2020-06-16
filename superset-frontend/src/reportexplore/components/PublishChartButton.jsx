@@ -201,14 +201,14 @@ export default class PublishChartButton extends React.Component {
 
   generateId = (value, type, isNew) => {
     if(isNew) {
-      let newId = value.replace(/[^A-Z0-9]+/ig, "_");
+      let newId = value.replace(/[^A-Z0-9]+/ig, "_").toLowerCase();
       let stateVar = `${type}Id`
 
       let isAvailable = this.state[`${type}List`].find((value) => {
         return value[stateVar] == newId
       })
 
-      newId = !!isAvailable ? newId + "1" : newId
+      newId = !!isAvailable ? newId + "_new" : newId
 
       this.setState({
         [stateVar]: newId
