@@ -537,6 +537,8 @@ class ReportAPI(BaseSupersetView):
            job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
            chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
            job_config['reportSchedule'] = 'ONCE'
+           job_config['config']['reportConfig']['mergeConfig']['rollupCol'] = 'Date'
+           job_config['config']['reportConfig']['mergeConfig']['reportPath'] = '{}.csv'.format(chart.chart_id + '_cumulative')
 
         response = self.post_job_config(job_config, chart)
         if response['params'].get('errmsg') is not None:
@@ -555,6 +557,7 @@ class ReportAPI(BaseSupersetView):
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
             job_config['reportId'] = chart.chart_id
             job_config['config']['reportConfig']['id'] = chart.chart_id
+            job_config['config']['reportConfig']['mergeConfig']['rollupCol'] = 'Date'
             job_config['config']['reportConfig']['dateRange'] = {
                 'staticInterval': chart.rolling_window,
                 'granularity': chart.chart_granularity.lower()
