@@ -72,6 +72,8 @@ class HawkeyeChart(
             "reportFrequency": self.hawkeye_report.report_frequency,
             "publishedReportId": self.hawkeye_report.published_report_id,
             "staticInterval": self.hawkeye_report.static_interval if self.hawkeye_report.static_interval is not None else False,
+            "isIntervalSlider": self.hawkeye_report.is_interval_slider if self.hawkeye_report.is_interval_slider is not None else False,
+            "intervalSlider": self.hawkeye_report.interval_slider,
 
             "chartId": self.chart_id,
             "comments": self.comments,

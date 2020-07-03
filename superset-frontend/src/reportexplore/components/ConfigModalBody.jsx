@@ -48,6 +48,8 @@ export default function ConfigModalBody ({
     reportId,
     reportSummary,
     reportFrequency,
+    isIntervalSlider,
+    intervalSlider,
     rollingWindow,
     chartId,
     chartName,
@@ -136,20 +138,6 @@ export default function ConfigModalBody ({
                 </ConfigInputControl>
               </Col>
             )}
-            {/*{ isNewReport && (
-              <Col md={6}>
-                <ConfigInputControl
-                  inputType="text"
-                  title={t('Report ID')}
-                  fieldName="reportId"
-                  placeholder="Enter Report ID"
-                  validation={validations["reportId"]}
-                  onChange={methods.handleInputChange}
-                  disabled={fieldDisabled}
-                  value={reportId}
-                />
-              </Col>
-            )}*/}
           </Row>
           <Row>
             <Col md={6}>
@@ -163,25 +151,7 @@ export default function ConfigModalBody ({
                 disabled={fieldDisabled}
                 value={reportDescription}
               />
-            </Col>              
-            {/*<Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="reportSummary">
-                  {t('Report Summary')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="reportSummary"
-                  placeholder="Enter Report Summary"
-                  type="text"
-                  componentClass="textarea"
-                  bsSize="sm"
-                  value={reportSummary}
-                  onChange={event => methods.handleInputChange(event)}
-                  style={{ maxWidth: '100%' }}
-                />
-              </FormGroup>
-            </Col>*/}
+            </Col>
           </Row>
           <Row>
             <Col md={6}>
@@ -194,6 +164,29 @@ export default function ConfigModalBody ({
                 Static Date Range
               </Checkbox>
             </Col>
+            <Col md={6}>
+                <Checkbox
+                  fieldName="isIntervalSlider"
+                  disabled={fieldDisabled}
+                  checked={isIntervalSlider}
+                  onChange={(e) => {methods.handleInputChange({currentTarget: {value: e.currentTarget.checked, name: 'isIntervalSlider'}})}}
+                >
+                  Add Interval Slider
+                </Checkbox>
+                { isIntervalSlider && (
+                  <Col md={6}>
+                    <ConfigInputControl
+                      inputType="number"
+                      fieldName="intervalSlider"
+                      placeholder="No of days"
+                      validation={validations["intervalSlider"]}
+                      onChange={methods.handleInputChange}
+                      disabled={fieldDisabled}
+                      value={intervalSlider}
+                    />
+                  </Col>
+                )}
+              </Col>
           </Row>
           <Row>
             <Col md={6}>
@@ -294,21 +287,6 @@ export default function ConfigModalBody ({
                 </ConfigInputControl>
               </Col>
             )}
-
-            {/*{ (isNewReport || isNewChart) && (
-              <Col md={6}>
-                <ConfigInputControl
-                  inputType="text"
-                  title={t('Chart ID')}
-                  fieldName="chartId"
-                  placeholder="Enter Chart ID"
-                  validation={validations["chartId"]}
-                  onChange={methods.handleInputChange}
-                  disabled={fieldDisabled}
-                  value={chartId}
-                />
-              </Col>
-            )}*/}
           </Row>
           <Row>
             <Col md={6}>
@@ -322,25 +300,7 @@ export default function ConfigModalBody ({
                 disabled={fieldDisabled}
                 value={chartDescription}
               />
-            </Col>            
-            {/*<Col md={6}>
-              <FormGroup>
-                <label className="control-label" htmlFor="chartSummary">
-                  {t('Chart Summary')}
-                </label>
-                <FormControl
-                  disabled={fieldDisabled}
-                  name="chartSummary"
-                  placeholder="Enter Chart Summary"
-                  type="text"
-                  componentClass="textarea"
-                  bsSize="sm"
-                  value={chartSummary}
-                  onChange={event => methods.handleInputChange(event)}
-                  style={{ maxWidth: '100%' }}
-                />
-              </FormGroup>
-            </Col>*/}
+            </Col>
           </Row>
           <Row>
             <Col md={6}>
@@ -398,7 +358,6 @@ export default function ConfigModalBody ({
                 <option value="line">Line</option>
                 <option value="bar">Bar</option>
                 <option value="pie">Pie</option>
-                {/*<option value="column">Column</option>*/}
                 <option value="stackedbar">Stacked bar</option>
                 <option value="horizontalBar">Bar-vertical</option>
               </ConfigInputControl>

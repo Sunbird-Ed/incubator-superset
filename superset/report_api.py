@@ -259,6 +259,9 @@ class ReportAPI(BaseSupersetView):
         report.report_type = form_data["reportType"]
         report.report_frequency = form_data["reportFrequency"]
         report.static_interval = form_data["staticInterval"]
+        report.is_interval_slider = form_data["isIntervalSlider"]
+        report.interval_slider = form_data["intervalSlider"]
+
         if report.id:
             self.overwrite_record(report)
         else:
@@ -533,7 +536,8 @@ class ReportAPI(BaseSupersetView):
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
             job_config['createdBy'] = 'User1'
 
-        if job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
+        if job_config['config']['reportConfig']['mergeConfig']['rollup'] == 1 and \
+           job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
            job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
            chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
            job_config['reportSchedule'] = 'ONCE'
@@ -549,7 +553,8 @@ class ReportAPI(BaseSupersetView):
             raise Exception('ERROR::Creation or updation of job config')
             return False
 
-        if job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
+        if job_config['config']['reportConfig']['mergeConfig']['rollup'] == 1 and \
+           job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
            job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
            chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
 
@@ -873,6 +878,11 @@ class ReportAPI(BaseSupersetView):
                     "rollupRange": (to_date - from_date).days,
                     "rollupAge": "DAY"
                 })
+
+        if chart.hawkeye_report.is_interval_slider:
+            interval.update({
+                'intervalSlider': chart.hawkeye_report.interval_slider
+            })
 
         druid_query = self.generate_druid_query(chart, deepcopy(chart.druid_query))
 
