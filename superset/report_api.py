@@ -285,7 +285,8 @@ class ReportAPI(BaseSupersetView):
         chart.y_axis_label = form_data["yAxisLabel"]
         chart.label_mapping = form_data["labelMapping"]
 
-        # chart.dimensions = json.dumps(form_data["dimensions"])
+        chart.dimensions = json.dumps(form_data["dimensions"])
+        chart.dimension_type = form_data["dimensionType"]
 
         chart.slice_id = form_data['sliceId']
         chart.chart_status = DRAFT
@@ -599,10 +600,17 @@ class ReportAPI(BaseSupersetView):
 
             report_config['reportconfig']['charts'].append(chart_config)
 
+            dataSourcePath = "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
+
+            if chart.dimensions is not None and chart.dimensions.get('value') is not None:
+                dataSourcePath = '/reports/fetch/{}/{}.json'.format(chart.dimension_type, chart.chart_id)
+                report_config['parameters'] = [chart.dimension_type]
+
             report_config['reportconfig']['dataSource'].append({
                 "id": chart.chart_id,
-                "path": "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
+                "path": dataSourcePath
             })
+
         else:
             charts = [c for c in filter(lambda x: x['id'] == chart.chart_id, report_config['reportconfig']['charts'])]
             chart_config = charts[0]
@@ -725,6 +733,7 @@ class ReportAPI(BaseSupersetView):
                         dim['extractionFn']['fn'] = dim['extractionFn'].pop('lookup')
                     else:
                         dim['extractionFn']['fn'] = dim['extractionFn'].pop('function')
+                    dim['extractionFn'] = deepcopy([dim['extractionFn']])
                     druid_query['dimensions'].append(deepcopy(dim))
                 else:
                     druid_query['dimensions'].append({
@@ -878,11 +887,9 @@ class ReportAPI(BaseSupersetView):
                     "rollupRange": (to_date - from_date).days,
                     "rollupAge": "DAY"
                 })
-
+        interval['intervalSlider'] = 0
         if chart.hawkeye_report.is_interval_slider:
-            interval.update({
-                'intervalSlider': chart.hawkeye_report.interval_slider
-            })
+            interval['intervalSlider'] = chart.hawkeye_report.interval_slider
 
         druid_query = self.generate_druid_query(chart, deepcopy(chart.druid_query))
 
@@ -919,6 +926,9 @@ class ReportAPI(BaseSupersetView):
                 'key': 'hawk-eye/' # File prefix if any
             },
         }
+
+        if chart.dimensions is not None and chart.dimensions.get('value') is not None:
+            config_template['config']['reportConfig']['output'][0]['dims'].append(chart.dimensions.get('value'))
 
         return config_template
 

@@ -36,7 +36,8 @@ class HawkeyeChart(
     x_axis_label = Column(String(250))
     y_axis_label = Column(String(250))
     label_mapping = Column(Text)
-    dimensions = Column(String(250))
+    dimensions = Column(Text)
+    dimension_type = Column(String(250))
     druid_query = Column(JSON)
     submitted_as_job = Column(Boolean)
     comments = Column(Text)
@@ -92,6 +93,7 @@ class HawkeyeChart(
             "labelMapping": json.dumps(self.label_mapping),
 
             "dimensions": self.dimensions,
+            "dimensionType": self.dimension_type,
             "reportStatus": self.chart_status,
 
             "sliceId": self.slice_id

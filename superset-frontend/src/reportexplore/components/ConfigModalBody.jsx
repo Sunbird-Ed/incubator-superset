@@ -69,6 +69,7 @@ export default function ConfigModalBody ({
     selectedChart,
     metrics,
     metricOptions,
+    dimensionType,
     dimensions,
     validations,
     invalidFields
@@ -460,7 +461,7 @@ export default function ConfigModalBody ({
         </Panel.Body>
       </Panel>
 
-      {/*<Panel>
+      <Panel>
         <Panel.Heading><strong>Chart Output Config</strong></Panel.Heading>
         <Panel.Body>
           <Row>
@@ -470,11 +471,10 @@ export default function ConfigModalBody ({
                   {t('Dimensions')}
                 </label>
                 <Select
-                  isMulti
+                  isMulti={false}
                   isDisabled={fieldDisabled}
                   name="dimensions"
-                  className={!!validations["dimensions"] ? 'not-selected': ''}
-                  multi={true}
+                  multi={false}
                   options={dimensionsList}
                   value={dimensions}
                   onChange={(optionValue) => {
@@ -483,9 +483,26 @@ export default function ConfigModalBody ({
                 />
               </FormGroup>
             </Col>
+            { (!!dimensions && Object.keys(dimensions).length > 0) && (
+              <Col md={6}>
+                <ConfigInputControl
+                  inputType="select"
+                  title={t('Dimension Type')}
+                  fieldName="dimensionType"
+                  validation={validations["dimensionType"]}
+                  onChange={methods.handleInputChange}
+                  disabled={fieldDisabled}
+                  value={dimensionType}
+                >
+                  <option value="$slug">slug</option>
+                  <option value="$state">state</option>
+                  <option value="$board">board</option>
+                </ConfigInputControl>
+              </Col>
+            )}
           </Row>
         </Panel.Body>
-      </Panel>*/}
+      </Panel>
       {role == 'creator' && (reportStatus == 'rejected' || reportStatus == 'draft' || !reportStatus) && (
         <Button
           onClick={() => methods.updateChart()}

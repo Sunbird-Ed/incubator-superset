@@ -91,6 +91,7 @@ export default class PublishChartButton extends React.Component {
       confirmationPopupTitle: "",
       metricOptions: [{label: "Count", value: "count"}, {label: "Count Distinct", value: "countDistinct"}],
       dimensions: [],
+      dimensionType: "$slug",
       metrics: [],
       invalidFields: [],
       validations: {},
@@ -109,7 +110,9 @@ export default class PublishChartButton extends React.Component {
     data[name] = value;
     this.setState(data, () => { 
       let fieldType = ["labelMapping", "dimensions"].includes(name) ? name == "dimensions" ? "array" : "json": "string"
-      this.validateField(name, fieldType)
+      if (!['dimensions'].includes(name)) {
+        this.validateField(name, fieldType)        
+      }
     });
   }
 
@@ -178,7 +181,8 @@ export default class PublishChartButton extends React.Component {
       additionalChanges.xAxisLabel = chart.xAxisLabel
       additionalChanges.yAxisLabel = chart.yAxisLabel
       additionalChanges.labelMapping = chart.labelMapping
-      // additionalChanges.dimensions = chart.dimensions
+      additionalChanges.dimensions = chart.dimensions
+      additionalChanges.dimensionType = chart.dimensionType
     } else if (fieldType == "chart") {
       additionalChanges.chartName = ""
       additionalChanges.chartDescription = ""
@@ -189,7 +193,8 @@ export default class PublishChartButton extends React.Component {
       additionalChanges.xAxisLabel = ""
       additionalChanges.yAxisLabel = ""
       additionalChanges.labelMapping = ""
-      // additionalChanges.dimensions = []
+      additionalChanges.dimensions = {}
+      additionalChanges.dimensionType = "$slug"
     }
 
     this.setState({
@@ -322,6 +327,7 @@ export default class PublishChartButton extends React.Component {
       yAxisLabel: this.state.yAxisLabel,
       labelMapping: this.state.labelMapping,
       dimensions: this.state.dimensions,
+      dimensionType: this.state.dimensionType,
       sliceId: slice.slice_id
     };
 
