@@ -57,6 +57,7 @@ RUN /frontend-mem-nag.sh \
 COPY ./superset-frontend /app/superset-frontend
 # This is BY FAR the most expensive step (thanks Terser!)
 RUN cd /app/superset-frontend \
+        && node --max-old-space-size=8192 \
         && npm run ${BUILD_CMD} \
         && rm -rf node_modules
 
