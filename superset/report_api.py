@@ -286,6 +286,7 @@ class ReportAPI(BaseSupersetView):
         chart.label_mapping = form_data["labelMapping"]
 
         chart.dimensions = json.dumps(form_data["dimensions"])
+        chart.filters = json.dumps(form_data["filters"])
         chart.dimension_type = form_data["dimensionType"]
 
         chart.slice_id = form_data['sliceId']
@@ -1055,6 +1056,20 @@ class ReportAPI(BaseSupersetView):
                 "commonDimension": x_axis_label
             }
         }
+
+        if chart.filters is not None and len(chart.filters) > 0:
+            filters = []
+
+            for fil_obj in chart.filters:
+                filters.append({
+                    "displayName":"Select {}".format(chart.label_mapping[fil_obj['value']]),
+                    "reference": fil_obj['value'],
+                    "controlType": "multi-select"
+                })
+
+            report_chart.update({
+                "filters": filters
+            })
 
         if chart.chart_type == 'pie':
             report_chart.pop('colors')

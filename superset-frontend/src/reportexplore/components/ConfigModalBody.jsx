@@ -65,6 +65,7 @@ export default function ConfigModalBody ({
     reportType,
     chartGranularity,
     labelMapping,
+    filters,
     selectedReport,
     selectedChart,
     metrics,
@@ -458,6 +459,26 @@ export default function ConfigModalBody ({
               />
             </Col>
           </Row>
+          <Row>
+            <Col md={6}>
+              <FormGroup>
+                <label className="control-label" htmlFor="filters">
+                  {t('filters')}
+                </label>
+                <Select
+                  isMulti={true}
+                  isDisabled={fieldDisabled}
+                  name="filters"
+                  multi={true}
+                  options={dimensionsList}
+                  value={filters}
+                  onChange={(optionValue) => {
+                    methods.handleInputChange({currentTarget: {value: optionValue, name: "filters"}})
+                  }}
+                />
+              </FormGroup>
+            </Col>
+          </Row>
         </Panel.Body>
       </Panel>
 
@@ -497,6 +518,7 @@ export default function ConfigModalBody ({
                   <option value="$slug">slug</option>
                   <option value="$state">state</option>
                   <option value="$board">board</option>
+                  <option value="$channel">channel</option>
                 </ConfigInputControl>
               </Col>
             )}
