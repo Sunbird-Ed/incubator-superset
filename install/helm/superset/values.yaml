@@ -22,7 +22,7 @@
 replicaCount: 1
 
 image:
-  repository: amancevice/superset
+  repository: kumarks/hawkeye
   tag: latest
   pullPolicy: IfNotPresent
 

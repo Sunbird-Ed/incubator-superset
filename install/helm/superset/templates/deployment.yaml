@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "superset.fullname" . }}
@@ -42,12 +42,18 @@ spec:
           volumeMounts:
             - name: superset-config
               mountPath: /etc/superset/
+          env:
+            - name: "SUPERSET_PORT"
+              value: {{ .Values.service.port | quote}}
           ports:
             - name: http
               containerPort: 8088
               protocol: TCP
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+          envFrom:
+            - configMapRef:
+                name: envvar-configmap
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

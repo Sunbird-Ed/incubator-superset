@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envvar-configmap
+data:
+  PG_USER: ""
+  PG_PASS: ""
+  PG_HOST: ""
+  PORTAL_HOST: ""
+  PORTAL_API_HOST: ""
+  PORTAL_API_KEY: ""
+  ANALYTICS_API_KEY: ""
+  ANALYTICS_API_HOST: ""
