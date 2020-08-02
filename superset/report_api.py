@@ -860,7 +860,7 @@ class ReportAPI(BaseSupersetView):
             merge_config.update({
               "rollupRange": rollup_ages[chart.rolling_window]['age'],
               "rollupAge": rollup_ages[chart.rolling_window]['name'],
-              "rollupCol": chart.label_mapping[chart.x_axis_label],
+              "rollupCol": chart.label_mapping[chart.x_axis_label] if chart.label_mapping.get(chart.label_mapping[chart.x_axis_label]) is None else chart.label_mapping.get(chart.label_mapping[chart.x_axis_label]),
               "frequency": report_frequency,
               "container": "reports",
               "rollup": 1
@@ -929,7 +929,9 @@ class ReportAPI(BaseSupersetView):
         }
 
         if chart.dimensions is not None and chart.dimensions.get('value') is not None:
-            config_template['config']['reportConfig']['output'][0]['dims'].append(chart.dimensions.get('value'))
+            config_template['config']['reportConfig']['output'][0]['dims'].append(
+                chart.label_mapping[chart.dimensions.get('value')]
+            )
 
         return config_template
 
@@ -1007,7 +1009,7 @@ class ReportAPI(BaseSupersetView):
 
 
     def report_chart_template(self, chart):
-        x_axis_label = chart.label_mapping[chart.x_axis_label]
+        x_axis_label = chart.label_mapping[chart.x_axis_label] if chart.label_mapping.get(chart.label_mapping[chart.x_axis_label]) is None else chart.label_mapping.get(chart.label_mapping[chart.x_axis_label])
 
         y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
@@ -1061,9 +1063,10 @@ class ReportAPI(BaseSupersetView):
             filters = []
 
             for fil_obj in chart.filters:
+                filterName = chart.label_mapping[fil_obj['value']] if chart.label_mapping.get(chart.label_mapping[fil_obj['value']]) is None else chart.label_mapping.get(chart.label_mapping[fil_obj['value']])
                 filters.append({
-                    "displayName":"Select {}".format(chart.label_mapping[fil_obj['value']]),
-                    "reference": fil_obj['value'],
+                    "displayName":"Select {}".format(filterName),
+                    "reference": filterName,
                     "controlType": "multi-select"
                 })
 
@@ -1084,7 +1087,7 @@ class ReportAPI(BaseSupersetView):
 
 
     def report_chart_option(self, chart):
-        x_axis_label = chart.label_mapping[chart.x_axis_label]
+        x_axis_label = chart.label_mapping[chart.x_axis_label] if chart.label_mapping.get(chart.label_mapping[chart.x_axis_label]) is None else chart.label_mapping.get(chart.label_mapping[chart.x_axis_label])
 
         y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
 
