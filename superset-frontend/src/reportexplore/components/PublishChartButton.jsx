@@ -99,6 +99,7 @@ export default class PublishChartButton extends React.Component {
       publishedReportId: "",
       portalHost: "",
       isIntervalSlider: false,
+      showTable: true,
       intervalSlider: 2,
       ...props.reportData,
     };
@@ -330,6 +331,7 @@ export default class PublishChartButton extends React.Component {
       yAxisLabel: this.state.yAxisLabel,
       labelMapping: this.state.labelMapping,
       filters: this.state.filters,
+      showTable: this.state.showTable,
       dimensions: this.state.dimensions,
       dimensionType: this.state.dimensionType,
       sliceId: slice.slice_id

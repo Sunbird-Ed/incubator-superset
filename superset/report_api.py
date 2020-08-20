@@ -284,6 +284,7 @@ class ReportAPI(BaseSupersetView):
         chart.x_axis_label = form_data["xAxisLabel"]
         chart.y_axis_label = form_data["yAxisLabel"]
         chart.label_mapping = form_data["labelMapping"]
+        chart.show_table = form_data["showTable"]
 
         chart.dimensions = json.dumps(form_data["dimensions"])
         chart.filters = json.dumps(form_data["filters"])
@@ -543,7 +544,7 @@ class ReportAPI(BaseSupersetView):
            job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
            chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
            job_config['reportSchedule'] = 'ONCE'
-           job_config['config']['reportConfig']['mergeConfig']['rollupCol'] = 'Date'
+           job_config['config']['reportConfig']['mergeConfig']['rollupCol'] = 'Date||%d-%m-%Y'
            job_config['config']['reportConfig']['mergeConfig']['reportPath'] = '{}.csv'.format(chart.chart_id + '_cumulative')
 
         response = self.post_job_config(job_config, chart)
@@ -564,7 +565,7 @@ class ReportAPI(BaseSupersetView):
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
             job_config['reportId'] = chart.chart_id
             job_config['config']['reportConfig']['id'] = chart.chart_id
-            job_config['config']['reportConfig']['mergeConfig']['rollupCol'] = 'Date'
+            job_config['config']['reportConfig']['mergeConfig']['rollupCol'] = 'Date||%d-%m-%Y'
             job_config['config']['reportConfig']['dateRange'] = {
                 'staticInterval': chart.rolling_window,
                 'granularity': chart.chart_granularity.lower()
@@ -601,17 +602,42 @@ class ReportAPI(BaseSupersetView):
 
             report_config['reportconfig']['charts'].append(chart_config)
 
-            dataSourcePath = "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
+            data_source_path = "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
 
             if chart.dimensions is not None and chart.dimensions.get('value') is not None:
-                dataSourcePath = '/reports/fetch/{}/{}.json'.format(chart.dimension_type, chart.chart_id)
+                data_source_path = '/reports/fetch/{}/{}.json'.format(chart.dimension_type, chart.chart_id)
                 report_config['parameters'] = [chart.dimension_type]
 
             report_config['reportconfig']['dataSource'].append({
                 "id": chart.chart_id,
-                "path": dataSourcePath
+                "path": data_source_path
             })
 
+            if chart.show_table:
+                if report_config['reportconfig'].get('downloadUrl') in ['', None]:
+                    report_config['reportconfig']['downloadUrl'] = data_source_path.replace(".json", ".csv")
+
+                if report_config['reportconfig'].get('table') is None:
+                    report_config['reportconfig']['table'] = []
+
+                report_config['reportconfig']['table'].append({
+                    "id": chart.chart_id,
+                    "name": chart.chart_name,
+                    "columnsExpr": "keys",
+                    "valuesExpr": "tableData",
+                    "downloadUrl": data_source_path.replace(".json", ".csv")
+                })
+            else:
+                if report_config['reportconfig'].get('files') is None:
+                    report_config['reportconfig']['files'] = []
+
+                report_config['reportconfig']['files'].append({
+                    "id": chart.chart_id,
+                    "name": chart.chart_name,
+                    "downloadUrl": data_source_path.replace(".json", ".csv"),
+                    "createdOn": "",
+                    "fileSize": ""
+                })
         else:
             charts = [c for c in filter(lambda x: x['id'] == chart.chart_id, report_config['reportconfig']['charts'])]
             chart_config = charts[0]
@@ -729,13 +755,13 @@ class ReportAPI(BaseSupersetView):
             for dim in query_dims:
                 if isinstance(dim, dict):
                     dim['fieldName'] = dim.pop('dimension')
-                    dim['aliasName'] = dim.pop('outputName')
                     if dim['extractionFn'].get('lookup'):
                         dim['extractionFn']['fn'] = dim['extractionFn'].pop('lookup')
                     else:
                         dim['extractionFn']['fn'] = dim['extractionFn'].pop('function')
                     dim['extractionFn'] = deepcopy([dim['extractionFn']])
                     druid_query['dimensions'].append(deepcopy(dim))
+                    dim['aliasName'] = chart.label_mapping[dim.pop('outputName')]
                 else:
                     druid_query['dimensions'].append({
                         'fieldName': dim,
@@ -865,6 +891,7 @@ class ReportAPI(BaseSupersetView):
               "container": "reports",
               "rollup": 1
             })
+            merge_config['rollupCol'] = merge_config['rollupCol'] + '||%d-%m-%Y'
 
         if chart.hawkeye_report.report_type == 'scheduled' and not chart.hawkeye_report.static_interval:
             interval = {
@@ -1001,7 +1028,10 @@ class ReportAPI(BaseSupersetView):
                 "title": chart.hawkeye_report.report_name,
                 "description": chart.hawkeye_report.report_description,
                 "dataSource": [],
-                "charts": []
+                "charts": [],
+                "table": [],
+                "files": [],
+                "downloadUrl": ""
             }
         }
 

@@ -73,6 +73,7 @@ export default function ConfigModalBody ({
     dimensionType,
     dimensions,
     validations,
+    showTable,
     invalidFields
   } = configData;
 
@@ -477,6 +478,16 @@ export default function ConfigModalBody ({
                   }}
                 />
               </FormGroup>
+            </Col>
+            <Col md={6}>
+              <Checkbox
+                fieldName="showTable"
+                disabled={fieldDisabled}
+                checked={showTable}
+                onChange={(e) => {methods.handleInputChange({currentTarget: {value: e.currentTarget.checked, name: 'showTable'}})}}
+              >
+                Show Table
+              </Checkbox>
             </Col>
           </Row>
         </Panel.Body>
