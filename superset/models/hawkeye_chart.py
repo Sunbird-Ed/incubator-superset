@@ -43,6 +43,8 @@ class HawkeyeChart(
     submitted_as_job = Column(Boolean)
     comments = Column(Text)
     show_table = Column(Boolean)
+    show_bignumber = Column(Boolean)
+    bignumber_type = Column(String(250))
 
     chart_status = Column(String(100))
     created_by = Column(String(100))
@@ -95,6 +97,8 @@ class HawkeyeChart(
             "labelMapping": json.dumps(self.label_mapping),
             "filters": self.filters,
             "showTable": self.show_table,
+            "showBignumber": self.show_bignumber,
+            "bignumberType": self.bignumber_type,
 
             "dimensions": self.dimensions,
             "dimensionType": self.dimension_type,

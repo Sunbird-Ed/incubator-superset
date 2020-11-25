@@ -100,6 +100,8 @@ export default class PublishChartButton extends React.Component {
       portalHost: "",
       isIntervalSlider: false,
       showTable: true,
+      showBignumber: false,
+      bignumberType: "chart",
       intervalSlider: 2,
       ...props.reportData,
     };
@@ -186,6 +188,8 @@ export default class PublishChartButton extends React.Component {
       additionalChanges.dimensions = chart.dimensions
       additionalChanges.filters = chart.filters
       additionalChanges.dimensionType = chart.dimensionType
+      additionalChanges.showBignumber = chart.showBignumber
+      additionalChanges.bignumberType = chart.bignumberType
     } else if (fieldType == "chart") {
       additionalChanges.chartName = ""
       additionalChanges.chartDescription = ""
@@ -199,6 +203,8 @@ export default class PublishChartButton extends React.Component {
       additionalChanges.dimensions = {}
       additionalChanges.filters = []
       additionalChanges.dimensionType = "$slug"
+      additionalChanges.showBignumber = false
+      additionalChanges.bignumberType = "chart"
     }
 
     this.setState({
@@ -334,6 +340,8 @@ export default class PublishChartButton extends React.Component {
       showTable: this.state.showTable,
       dimensions: this.state.dimensions,
       dimensionType: this.state.dimensionType,
+      showBignumber: this.state.showBignumber,
+      bignumberType: this.state.bignumberType,
       sliceId: slice.slice_id
     };
 

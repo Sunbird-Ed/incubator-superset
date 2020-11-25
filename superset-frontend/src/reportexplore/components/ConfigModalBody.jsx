@@ -74,6 +74,8 @@ export default function ConfigModalBody ({
     dimensions,
     validations,
     showTable,
+    showBignumber,
+    bignumberType,
     invalidFields
   } = configData;
 
@@ -361,6 +363,7 @@ export default function ConfigModalBody ({
                 <option value="line">Line</option>
                 <option value="bar">Bar</option>
                 <option value="pie">Pie</option>
+                <option value="bignumber">Big Number</option>
                 <option value="stackedbar">Stacked bar</option>
                 <option value="horizontalBar">Bar-vertical</option>
               </ConfigInputControl>
@@ -490,6 +493,36 @@ export default function ConfigModalBody ({
               </Checkbox>
             </Col>
           </Row>
+          { chartType != 'bignumber' && (
+            <Row>
+              <Col md={6}>
+                <Checkbox
+                  fieldName="showBignumber"
+                  disabled={fieldDisabled}
+                  checked={showBignumber}
+                  onChange={(e) => {methods.handleInputChange({currentTarget: {value: e.currentTarget.checked, name: 'showBignumber'}})}}
+                >
+                  Show Big Number &nbsp;&nbsp;&nbsp;
+                </Checkbox>
+                { showBignumber && (
+                  <FormGroup>
+                    <Radio name="bignumberType"
+                           disabled={fieldDisabled}
+                           checked={bignumberType == "chart"}
+                           onClick={event => methods.handleRadio("bignumberType", "chart")} inline>
+                      Chart Level
+                    </Radio>
+                    <Radio name="bignumberType"
+                           disabled={fieldDisabled}
+                           checked={bignumberType == "report"}
+                           onClick={event => methods.handleRadio("bignumberType", "report")} inline>
+                      Report Level
+                    </Radio>{'  '}
+                  </FormGroup>
+                )}
+              </Col>
+            </Row>
+          )}
         </Panel.Body>
       </Panel>
 

@@ -285,6 +285,8 @@ class ReportAPI(BaseSupersetView):
         chart.y_axis_label = form_data["yAxisLabel"]
         chart.label_mapping = form_data["labelMapping"]
         chart.show_table = form_data["showTable"]
+        chart.show_bignumber = form_data["showBignumber"]
+        chart.bignumber_type = form_data["bignumberType"]
 
         chart.dimensions = json.dumps(form_data["dimensions"])
         chart.filters = json.dumps(form_data["filters"])
@@ -292,8 +294,6 @@ class ReportAPI(BaseSupersetView):
 
         chart.slice_id = form_data['sliceId']
         chart.chart_status = DRAFT
-
-        
 
         if chart.id:
             self.overwrite_record(chart)
@@ -594,11 +594,23 @@ class ReportAPI(BaseSupersetView):
                 report_config.pop("templateurl")
                 report_config.pop("reportid")
                 report_config.pop("reportaccessurl")
+                report_config.pop("children")
+                if report_config.get("parameters") is None:
+                    report_config.pop("parameters")
             except Exception as e:
                 pass
 
         if chart.is_new_chart:
-            chart_config = self.report_chart_template(chart)
+            if chart.chart_type == "bignumber":
+                report_config = self.report_add_bignumber(chart, report_config)
+            else:
+                chart_config = self.report_chart_template(chart)
+
+                if chart.show_bignumber and chart.bignumber_type == "report":
+                    report_config = self.report_add_bignumber(chart, report_config)
+                elif chart.show_bignumber and chart.bignumber_type == "chart":
+                    chart_config = self.chart_add_bignumber(chart, chart_config)
+
 
             report_config['reportconfig']['charts'].append(chart_config)
 
@@ -760,8 +772,8 @@ class ReportAPI(BaseSupersetView):
                     else:
                         dim['extractionFn']['fn'] = dim['extractionFn'].pop('function')
                     dim['extractionFn'] = deepcopy([dim['extractionFn']])
-                    druid_query['dimensions'].append(deepcopy(dim))
                     dim['aliasName'] = chart.label_mapping[dim.pop('outputName')]
+                    druid_query['dimensions'].append(deepcopy(dim))
                 else:
                     druid_query['dimensions'].append({
                         'fieldName': dim,
@@ -1036,6 +1048,49 @@ class ReportAPI(BaseSupersetView):
         }
 
         return template
+
+
+    def report_add_bignumber(self, chart, report_config):
+        if report_config['reportconfig'].get('charts') is None:
+            report_config['reportconfig']['charts'] = []
+
+        if len(report_config['reportconfig']['charts']) == 0 or \
+           report_config['reportconfig']['charts'][0].get('labelsExpr') is not None:
+            report_config['reportconfig']['charts'].insert(0, {
+                'id': 'Big_Number',
+                'bigNumbers': [],
+                'dataSource': {
+                    'ids': [],
+                    'commonDimension': 'Date'
+                }
+            })
+
+        y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
+
+        report_config['reportconfig']['charts'][0]['bigNumbers'].append({
+            'footer': ' ',
+            'header': y_axis_label,
+            'dataExpr': y_axis_label
+        })
+
+        report_config['reportconfig']['charts'][0]['dataSource']['ids'].append(chart.chart_id)
+
+        return report_config
+
+
+    def chart_add_bignumber(self, chart, chart_config):
+        if chart_config.get('bigNumbers') is None:
+            chart_config['bigNumbers'] = []
+
+        y_axis_label = chart.label_mapping[chart.label_mapping[chart.y_axis_label]]
+
+        chart_config['bigNumbers'].append({
+            'footer': ' ',
+            'header': y_axis_label,
+            'dataExpr': y_axis_label
+        })
+
+        return chart_config
 
 
     def report_chart_template(self, chart):
