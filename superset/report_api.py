@@ -611,8 +611,7 @@ class ReportAPI(BaseSupersetView):
                 elif chart.show_bignumber and chart.bignumber_type == "chart":
                     chart_config = self.chart_add_bignumber(chart, chart_config)
 
-
-            report_config['reportconfig']['charts'].append(chart_config)
+                report_config['reportconfig']['charts'].append(chart_config)
 
             data_source_path = "/reports/fetch/hawk-eye/{}.json".format(chart.chart_id)
 

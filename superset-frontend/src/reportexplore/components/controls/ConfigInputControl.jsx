@@ -54,7 +54,8 @@ export default class ConfigInputControl extends React.Component {
       disabled,
       value,
       placeholder,
-      validation
+      validation,
+      children
     } = this.props
 
     const { dataChanged } = this.state
@@ -86,7 +87,7 @@ export default class ConfigInputControl extends React.Component {
             value={value}
             onChange={event => onChange(event)}
           >
-            {this.props.children}
+            {children}
           </FormControl>
         )}
         {inputType=="textarea" && (

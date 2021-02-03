@@ -319,6 +319,7 @@ export default function ConfigModalBody ({
                 value={chartGranularity}
               >
                 <option value="">Select Report Granularity</option>
+                <option value="latest_index">Latest Index</option>
                 <option value="DAY">Day</option>
                 <option value="WEEK">Week</option>
                 <option value="MONTH">Month</option>
