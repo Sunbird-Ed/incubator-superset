@@ -542,7 +542,8 @@ class ReportAPI(BaseSupersetView):
         if job_config['config']['reportConfig']['mergeConfig']['rollup'] == 1 and \
            job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
            job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
-           chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
+           chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time' and \
+           chart.is_new_chart:
            job_config['reportSchedule'] = 'ONCE'
            job_config['config']['reportConfig']['mergeConfig']['rollupCol'] = 'Date||%d-%m-%Y'
            job_config['config']['reportConfig']['mergeConfig']['reportPath'] = '{}.csv'.format(chart.chart_id + '_cumulative')
@@ -559,7 +560,8 @@ class ReportAPI(BaseSupersetView):
         if job_config['config']['reportConfig']['mergeConfig']['rollup'] == 1 and \
            job_config['config']['reportConfig']['mergeConfig']['rollupAge'] == 'DAY' and \
            job_config['config']['reportConfig']['mergeConfig']['rollupRange'] > 30 and \
-           chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time':
+           chart.hawkeye_report.static_interval and chart.hawkeye_report.report_type != 'one-time' and \
+           chart.is_new_chart:
 
             chart.chart_id += '_cumulative'
             job_config['reportSchedule'] = chart.hawkeye_report.report_frequency
@@ -1133,7 +1135,7 @@ class ReportAPI(BaseSupersetView):
                 }
             ],
             "labelsExpr": x_axis_label,
-            "chartType": chart.chart_type,
+            "chartType": "bar" if chart.chart_type == 'stackedbar' else chart.chart_type,
             "options": self.report_chart_option(chart),
             "dataSource": {
                 "ids": [
