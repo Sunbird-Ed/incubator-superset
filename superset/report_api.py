@@ -773,13 +773,24 @@ class ReportAPI(BaseSupersetView):
                     else:
                         dim['extractionFn']['fn'] = dim['extractionFn'].pop('function')
                     dim['extractionFn'] = deepcopy([dim['extractionFn']])
-                    dim['aliasName'] = chart.label_mapping[dim.pop('outputName')]
+                    dim['aliasName'] = chart.label_mapping[dim['outputName']]
                     druid_query['dimensions'].append(deepcopy(dim))
                 else:
                     druid_query['dimensions'].append({
                         'fieldName': dim,
+                        'outputName': dim,
                         'aliasName': chart.label_mapping[dim]
                     })
+        groupby_ordered = []
+
+        for groupby_dim in json.loads(chart.slice_rec.params)['groupby']:
+            filtered_obj = filter(lambda x: x['outputName'] == groupby_dim, druid_query['dimensions'])
+            filtered_list = list(filtered_obj)
+            order_dimension = deepcopy(filtered_list[0])
+            order_dimension.pop('outputName', None)
+            groupby_ordered.append(order_dimension)
+
+        druid_query['dimensions'] = groupby_ordered
 
         if druid_query.get('filter') is not None:
             druid_query['filters'] = druid_query.pop('filter')
