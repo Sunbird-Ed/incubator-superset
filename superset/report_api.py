@@ -1039,7 +1039,7 @@ class ReportAPI(BaseSupersetView):
             ],
             "tags": ["1Bn"],
             "updatefrequency": report_frequency,
-            "createdby": "kumar",
+            "createdby": chart.created_by.first_name + " " + chart.created_by.last_name,
             "type": "public",
             "slug": "hawk-eye",
             "reportduration": {
