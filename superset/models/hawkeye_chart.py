@@ -22,8 +22,6 @@ class HawkeyeChart(
 
     hawkeye_report_id = Column(Integer, ForeignKey("hawkeye_reports.id"), nullable=False)
     slice_id = Column(Integer, ForeignKey("slices.id"), nullable=False)
-    created_by_fk = Column(Integer, ForeignKey("ab_user.id"), nullable=False)
-    reviewed_by_fk = Column(Integer, ForeignKey("ab_user.id"), nullable=False)
     chart_id = Column(String(250))
     chart_name = Column(String(250))
     chart_description = Column(String(250))

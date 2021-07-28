@@ -944,10 +944,9 @@ class ReportAPI(BaseSupersetView):
             interval['intervalSlider'] = chart.hawkeye_report.interval_slider
 
         druid_query = self.generate_druid_query(chart, deepcopy(chart.druid_query))
-
         config_template = {
             'reportId': chart.chart_id, # Unique id of the report
-            'createdBy': 'User1', # ID of the user who requested the report
+            'createdBy': chart.created_by.first_name + " " + chart.created_by.last_name, # ID of the user who requested the report
             'description': chart.chart_description, # Short Description about the report
             'reportSchedule': report_frequency, # Type of report (ONCE/DAILY/WEEKLY/MONTHLY)
             'config': { # Config of the report
