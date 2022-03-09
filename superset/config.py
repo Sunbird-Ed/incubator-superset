@@ -587,7 +587,7 @@ JINJA_CONTEXT_ADDONS: Dict[str, Callable] = {}
 
 # Roles that are controlled by the API / Superset and should not be changes
 # by humans.
-ROBOT_PERMISSION_ROLES = ["Public", "Gamma", "Alpha", "Admin", "sql_lab"]
+ROBOT_PERMISSION_ROLES = ["Public", "Gamma", "Alpha", "Admin", "sql_lab", "Report Creator", "Report Reviewer"]
 
 CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 

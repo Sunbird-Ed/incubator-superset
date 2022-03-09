@@ -128,6 +128,12 @@ class SupersetSecurityManager(SecurityManager):
         "RowLevelSecurityFiltersModelView",
     } | USER_MODEL_VIEWS
 
+    REPORT_USER_ONLY_MODEL_VIEWS = {
+        "ReportSliceModelView",
+        "SliceModelView",
+        "ReportAPI"
+    }
+
     ALPHA_ONLY_VIEW_MENUS = {"Upload a CSV"}
 
     ADMIN_ONLY_PERMISSIONS = {
@@ -629,13 +635,14 @@ class SupersetSecurityManager(SecurityManager):
         logger.info("Syncing role definition")
 
         self.create_custom_permissions()
-
         # Creating default roles
         self.set_role("Admin", self._is_admin_pvm)
         self.set_role("Alpha", self._is_alpha_pvm)
         self.set_role("Gamma", self._is_gamma_pvm)
         self.set_role("granter", self._is_granter_pvm)
         self.set_role("sql_lab", self._is_sql_lab_pvm)
+        self.set_role("Report Creator", self._is_report_creator_pvm)
+        self.set_role("Report Reviewer", self._is_report_reviewer_pvm)
 
         if conf.get("PUBLIC_ROLE_LIKE_GAMMA", False):
             self.set_role("Public", self._is_gamma_pvm)
@@ -777,6 +784,80 @@ class SupersetSecurityManager(SecurityManager):
             or (
                 pvm.view_menu.name in self.USER_MODEL_VIEWS
                 and pvm.permission.name == "can_list"
+            )
+        )
+
+    def _is_report_creator_pvm(self, pvm: PermissionModelView) -> bool:
+        """
+        Return True if the FAB permission/view is SQL Lab related, False
+        otherwise.
+
+        :param pvm: The FAB permission/view
+        :returns: Whether the FAB object is SQL Lab related
+        """
+
+        return (
+            pvm.view_menu.name
+            in {"ReportCharts"}
+            or (
+                pvm.permission.name in {
+                    "can_delete",
+                    "can_list",
+                    "can_edit",
+                    "can_add",
+                    "can_submit_report",
+                    "can_update_report_chart",
+                }
+                and pvm.view_menu.name in self.REPORT_USER_ONLY_MODEL_VIEWS
+            )
+            or (
+                pvm.permission.name in {
+                    "can_explore",
+                    "can_explore_json",
+                }
+                and pvm.view_menu.name == "Superset"
+            )
+            or (
+                pvm.permission.name in {
+                    "all_datasource_access"
+                }
+            )
+        )
+
+    def _is_report_reviewer_pvm(self, pvm: PermissionModelView) -> bool:
+        """
+        Return True if the FAB permission/view is SQL Lab related, False
+        otherwise.
+
+        :param pvm: The FAB permission/view
+        :returns: Whether the FAB object is SQL Lab related
+        """
+
+        return (
+            pvm.view_menu.name
+            in {"ReportCharts"}
+            or (
+                pvm.permission.name in {
+                    "can_delete",
+                    "can_list",
+                    "can_edit",
+                    "can_add",
+                    "can_reject_report",
+                    "can_publish_report",
+                }
+                and pvm.view_menu.name in self.REPORT_USER_ONLY_MODEL_VIEWS
+            )
+            or (
+                pvm.permission.name in {
+                    "can_explore",
+                    "can_explore_json",
+                }
+                and pvm.view_menu.name == "Superset"
+            )
+            or (
+                pvm.permission.name in {
+                    "all_datasource_access"
+                }
             )
         )
 
