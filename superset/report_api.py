@@ -182,12 +182,16 @@ class ReportAPI(BaseSupersetView):
         standalone = (
             request.args.get(utils.ReservedUrlParameters.STANDALONE.value) == "true"
         )
-        if security_manager.can_access("can_submit_report", "ReportAPI"):
-            role = "creator"
-        elif security_manager.can_access("can_publish_report", "ReportAPI"):
-            role = "reviewer"
-        else:
-            role = "any"
+        
+        # Check user roles directly
+        role = "any"
+        for user_role in g.user.roles:
+            if user_role.name == "Report Reviewer":
+                role = "reviewer"
+                break
+            elif user_role.name == "Report Creator":
+                role = "creator"
+                break
 
         bootstrap_data = {
             "can_add": slice_add_perm,
@@ -259,7 +263,6 @@ class ReportAPI(BaseSupersetView):
         report.report_type = form_data["reportType"]
         report.report_frequency = form_data["reportFrequency"]
         report.static_interval = form_data["staticInterval"]
-        report.is_interval_slider = form_data["isIntervalSlider"]
         report.interval_slider = form_data["intervalSlider"]
 
         if report.id:
@@ -593,6 +596,8 @@ class ReportAPI(BaseSupersetView):
         else:
             report_config = self.get_report_config(published_report_id)
             try:
+                print(json.dumps(report_config))
+                 
                 report_config.pop("templateurl")
                 report_config.pop("reportid")
                 report_config.pop("reportaccessurl")
@@ -1020,7 +1025,10 @@ class ReportAPI(BaseSupersetView):
                 "report": report_config
             }
         }
-
+        print(report_config)
+        print(json.dumps(report_config))
+        print(os.environ['PORTAL_API_KEY'])
+        print(json.dumps(headers))
         response = http_client.request(method, url, headers=headers, data=json.dumps(report_config))
         report_id = response.json()['result']['reportId']
         

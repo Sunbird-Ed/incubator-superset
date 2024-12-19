@@ -98,7 +98,6 @@ export default class PublishChartButton extends React.Component {
       validations: {},
       publishedReportId: "",
       portalHost: "",
-      isIntervalSlider: false,
       showTable: true,
       showBignumber: false,
       bignumberType: "chart",
@@ -165,7 +164,6 @@ export default class PublishChartButton extends React.Component {
       additionalChanges.reportType = report.reportType
       additionalChanges.reportFrequency = report.reportFrequency
       additionalChanges.staticInterval = report.staticInterval
-      additionalChanges.isIntervalSlider = report.isIntervalSlider
       additionalChanges.intervalSlider = report.intervalSlider
     } else if (fieldType == "report") {
       additionalChanges.reportName = ""
@@ -320,7 +318,6 @@ export default class PublishChartButton extends React.Component {
       reportSummary: this.state.reportSummary,
       reportType: this.state.reportType,
       reportFrequency: this.state.reportFrequency,
-      isIntervalSlider: this.state.isIntervalSlider,
       intervalSlider: this.state.intervalSlider,
       chartId: this.state.chartId,
       chartName: this.state.chartName,
@@ -371,12 +368,16 @@ export default class PublishChartButton extends React.Component {
     this.setState({ submitting: true });
 
     const { slice, role } = this.props
+    console.log('Current user role:', role);
 
     let reportParams = { sliceId: slice.slice_id };
-
-    // slice.form_data.report_status = role == 'reviewer' ? 'published' : 'review_submitted'
-    const url = role == 'reviewer' ? "/reportapi/publish_report" : "/reportapi/submit_report"
-
+    console.log(JSON.stringify(role));
+    // Check if user has reviewer permission instead of checking role string
+    const isReviewer = role === 'reviewer' ? true : false
+    console.log('User has reviewer permission:', isReviewer);
+    
+    const url = isReviewer ? "/reportapi/publish_report" : "/reportapi/submit_report"
+    console.log('Using API endpoint:', url);
 
     SupersetClient.post({ url, postPayload: { form_data: reportParams } }).then(({ json }) => {
       this.setState({
@@ -459,10 +460,11 @@ export default class PublishChartButton extends React.Component {
   }
 
   render() {
+    const { slice, role } = this.props;
+    console.log('Component rendered with role:', role);
 
     const { reportStatus, toasts } = this.state
-    const { role } = this.props
-
+    const modalTitle = role && role.permissions && role.permissions.includes('can_reject_report') ? t('Publish Report') : t('Submit Report');
     return role == 'creator' || (role == 'reviewer' && reportStatus != "draft" && !!reportStatus) ? (
       <span>
         <ModalTrigger
@@ -477,7 +479,7 @@ export default class PublishChartButton extends React.Component {
           isButton
           animation={this.props.animation}
           triggerNode={role == 'creator' ? t('Submit') : t('Publish')}
-          modalTitle={role == 'creator' ? t('Submit'): t('Publish Report/Chart as Draft')}
+          modalTitle={modalTitle}
           bsSize="large"
           modalBody={this.renderConfirmationBody()}
         />

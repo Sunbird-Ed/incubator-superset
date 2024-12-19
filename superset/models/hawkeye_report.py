@@ -46,7 +46,6 @@ class HawkeyeReport(
             'reportType': self.report_type,
             'reportFrequency': self.report_frequency,
             'staticInterval': self.static_interval if self.static_interval is not None else False,
-            'isIntervalSlider': self.is_interval_slider,
             'intervalSlider': self.interval_slider,
             'charts': associated_charts
         }
