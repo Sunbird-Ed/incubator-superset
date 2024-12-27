@@ -48,7 +48,6 @@ export default function ConfigModalBody ({
     reportId,
     reportSummary,
     reportFrequency,
-    isIntervalSlider,
     intervalSlider,
     rollingWindow,
     chartId,
@@ -169,29 +168,6 @@ export default function ConfigModalBody ({
                 Static Date Range
               </Checkbox>
             </Col>
-            <Col md={6}>
-                <Checkbox
-                  fieldName="isIntervalSlider"
-                  disabled={fieldDisabled}
-                  checked={isIntervalSlider}
-                  onChange={(e) => {methods.handleInputChange({currentTarget: {value: e.currentTarget.checked, name: 'isIntervalSlider'}})}}
-                >
-                  Add Interval Slider
-                </Checkbox>
-                { isIntervalSlider && (
-                  <Col md={6}>
-                    <ConfigInputControl
-                      inputType="number"
-                      fieldName="intervalSlider"
-                      placeholder="No of days"
-                      validation={validations["intervalSlider"]}
-                      onChange={methods.handleInputChange}
-                      disabled={fieldDisabled}
-                      value={intervalSlider}
-                    />
-                  </Col>
-                )}
-              </Col>
           </Row>
           <Row>
             <Col md={6}>
